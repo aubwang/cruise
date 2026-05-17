@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Local agent runtime/config output.
+.agents/
+.claude/
+.codex/
+.opencode/
+
+# Cruise dogfood/live session state for this repo.
+.cruise/plan.md
+.cruise/spec.md
+.cruise/next.md
+.cruise/nudge.md
+.cruise/nudges.log.md
+.cruise/autonomy.md
+.cruise/autonomy.log.md
+.cruise/debug/
+.cruise/sessions/*
+!.cruise/sessions/.gitkeep
+HANDOFF.md
+ROADMAP.md
+AGENTS.md
+CLAUDE.md
