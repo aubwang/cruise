@@ -1,0 +1,8 @@
+{
+  "adr_dir": "docs/adr",
+  "protocol_root": ".cruise",
+  "root_instruction_files": [
+    "AGENTS.md",
+    "CLAUDE.md"
+  ]
+}
