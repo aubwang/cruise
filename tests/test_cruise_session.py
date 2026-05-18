@@ -210,6 +210,45 @@ class CruiseSessionTest(unittest.TestCase):
         self.assertIn("ROADMAP.md", result.stdout)
         self.assertNotIn("warning:", result.stdout)
 
+    def test_handoff_warns_on_placeholder_plan(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+
+        result = self.run_cli("handoff", "--no-commit")
+
+        self.assertIn("warning:", result.stdout)
+        self.assertIn(".cruise/plan.md", result.stdout)
+        self.assertIn("Current objective", result.stdout)
+        self.assertIn("Current slice", result.stdout)
+
+    def test_handoff_silent_when_plan_is_real(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        plan = self.root / ".cruise" / "plan.md"
+        plan.write_text(
+            "# Cruise Plan\n\n## Current objective\n\nShip the seccomp sandbox.\n\n"
+            "## Current slice\n\n- Wire seccomp filter into the launcher.\n\n"
+            "## Pending artifacts\n\nNone.\n",
+            encoding="utf-8",
+        )
+
+        result = self.run_cli("handoff", "--no-commit")
+
+        self.assertNotIn("warning:", result.stdout)
+
+    def test_handoff_warns_when_only_objective_is_placeholder(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        plan = self.root / ".cruise" / "plan.md"
+        plan.write_text(
+            "# Cruise Plan\n\n## Current objective\n\n(not set yet)\n\n"
+            "## Current slice\n\n- Real slice content.\n",
+            encoding="utf-8",
+        )
+
+        result = self.run_cli("handoff", "--no-commit")
+
+        self.assertIn("warning:", result.stdout)
+        self.assertIn("Current objective", result.stdout)
+        self.assertNotIn("Current objective and Current slice", result.stdout)
+
     def test_setup_check_reports_without_applying(self) -> None:
         result = self.run_cli("cruise-setup", "check")
 

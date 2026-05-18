@@ -1059,6 +1059,29 @@ def cmd_plan(args: argparse.Namespace) -> None:
     print(".cruise/plan.md exists and is non-empty.")
 
 
+def plan_md_warning() -> str | None:
+    plan_path = CRUISE / "plan.md"
+    if not plan_path.exists():
+        return f"warning: {plan_path.relative_to(ROOT)} is missing; the handoff has no current slice to inherit."
+    plan = read_text(plan_path).strip()
+    if not plan:
+        return f"warning: {plan_path.relative_to(ROOT)} is empty; the handoff has no current slice to inherit."
+    objective = section_after_heading(plan, "Current objective")
+    slice_section = section_after_heading(plan, "Current slice")
+    stale = []
+    if not objective or objective.startswith("(not set"):
+        stale.append("Current objective")
+    if not slice_section or slice_section.startswith("(not set"):
+        stale.append("Current slice")
+    if stale:
+        return (
+            f"warning: {plan_path.relative_to(ROOT)} still contains placeholder content "
+            f"({' and '.join(stale)} unset). The handoff inherits this — update "
+            f"`.cruise/plan.md` and rerun handoff before declaring done."
+        )
+    return None
+
+
 def cmd_handoff(args: argparse.Namespace) -> None:
     session_path = write_session(commit_requested=args.commit)
     print(f"Wrote {session_path.relative_to(ROOT)}")
@@ -1067,6 +1090,9 @@ def cmd_handoff(args: argparse.Namespace) -> None:
         maybe_commit()
     else:
         print("No commit requested.")
+    warning = plan_md_warning()
+    if warning:
+        print(warning)
 
 
 def cmd_resume(_args: argparse.Namespace) -> None:
