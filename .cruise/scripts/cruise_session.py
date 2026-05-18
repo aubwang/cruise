@@ -429,6 +429,45 @@ def find_planning_docs() -> list[str]:
     return [candidate for candidate in PLANNING_DOC_CANDIDATES if (ROOT / candidate).exists()]
 
 
+def extract_subsection(text: str, heading: str, level: int) -> str:
+    prefix = "#" * level
+    pattern = re.compile(
+        rf"^{re.escape(prefix)} {re.escape(heading)}\s*\n(.*?)(?=^#{{1,{level}}} |\Z)",
+        re.DOTALL | re.MULTILINE,
+    )
+    match = pattern.search(text)
+    return match.group(1).strip() if match else ""
+
+
+def planning_files_warning() -> str | None:
+    detected = find_planning_docs()
+    if not detected:
+        return None
+    for name in ["CLAUDE.md", "AGENTS.md"]:
+        path = ROOT / name
+        if not path.exists():
+            continue
+        text = read_text(path)
+        if PROTOCOL_MARKER_START not in text:
+            continue
+        agent_skills = extract_subsection(text, "Agent skills", 2)
+        if not agent_skills:
+            return (
+                f"warning: planning files detected but `## Agent skills` block is missing in {name}; "
+                f"reconcile per cruise-setup step 6 by adding a `### Planning files` subsection naming "
+                f"{', '.join(detected)}."
+            )
+        planning_section = extract_subsection(agent_skills, "Planning files", 3)
+        missing = [doc for doc in detected if Path(doc).name not in planning_section]
+        if missing:
+            return (
+                f"warning: detected planning file(s) {', '.join(missing)} not named under "
+                f"`### Planning files` in {name}; reconcile per cruise-setup step 6."
+            )
+        return None
+    return None
+
+
 def default_config() -> dict[str, object]:
     config = dict(DEFAULT_CONFIG)
     candidates = find_adr_candidates()
@@ -932,6 +971,9 @@ def setup_report() -> str:
     if planning_docs:
         lines.append(f"- detected: {', '.join(planning_docs)}")
         lines.append("- reconcile with `.cruise/plan.md` (current active slice). Cruise does not own `ROADMAP.md`, `docs/PLAN.md`, or similar product files — leave them under repo ownership.")
+        warning = planning_files_warning()
+        if warning:
+            lines.append(f"- {warning}")
     else:
         lines.append("- detected: none")
     lines.append("")

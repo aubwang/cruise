@@ -107,7 +107,7 @@ Accepted shipped ADRs live in `docs/adr/`. Provisional unshipped decisions live 
 
 ### Planning files
 
-[list the repo-owned planning files agents should consult — e.g. `ROADMAP.md` for product roadmap, `docs/PLAN.md` for implementation status and milestones.]
+[list each repo-owned planning file that agents should consult at session start, with a one-line description of what it contains. Every detected planning file must appear here by name — `cruise-setup check` warns until they do.]
 ```
 
 ## 6. Reconcile `.cruise/plan.md` (required)

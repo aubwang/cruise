@@ -155,6 +155,61 @@ class CruiseSessionTest(unittest.TestCase):
         self.assertIn("## Pending artifacts", (self.root / "HANDOFF.md").read_text(encoding="utf-8"))
         self.assertIn("## Provisional decisions", (self.root / "HANDOFF.md").read_text(encoding="utf-8"))
 
+    def test_planning_warning_when_agent_skills_block_missing(self) -> None:
+        (self.root / "ROADMAP.md").write_text("# Product Roadmap\n", encoding="utf-8")
+        self.run_cli("cruise-setup", "apply")
+        self.run_cli("cruise-setup", "instructions", "AGENTS.md")
+
+        result = self.run_cli("cruise-setup", "check")
+
+        self.assertIn("warning:", result.stdout)
+        self.assertIn("`## Agent skills` block is missing", result.stdout)
+        self.assertIn("ROADMAP.md", result.stdout)
+
+    def test_planning_warning_when_files_not_listed_in_subsection(self) -> None:
+        (self.root / "ROADMAP.md").write_text("# Product Roadmap\n", encoding="utf-8")
+        (self.root / "docs").mkdir()
+        (self.root / "docs" / "PLAN.md").write_text("# Plan\n", encoding="utf-8")
+        self.run_cli("cruise-setup", "apply")
+        self.run_cli("cruise-setup", "instructions", "AGENTS.md")
+        agents = self.root / "AGENTS.md"
+        agents.write_text(
+            agents.read_text(encoding="utf-8")
+            + "\n## Agent skills\n\n### Domain glossary\n\nsingle-context\n\n### Decisions\n\nADRs in `docs/adr/`.\n",
+            encoding="utf-8",
+        )
+
+        result = self.run_cli("cruise-setup", "check")
+
+        self.assertIn("warning:", result.stdout)
+        self.assertIn("not named under `### Planning files`", result.stdout)
+        self.assertIn("ROADMAP.md", result.stdout)
+        self.assertIn("docs/PLAN.md", result.stdout)
+
+    def test_planning_warning_silent_when_files_listed(self) -> None:
+        (self.root / "ROADMAP.md").write_text("# Product Roadmap\n", encoding="utf-8")
+        self.run_cli("cruise-setup", "apply")
+        self.run_cli("cruise-setup", "instructions", "AGENTS.md")
+        agents = self.root / "AGENTS.md"
+        agents.write_text(
+            agents.read_text(encoding="utf-8")
+            + "\n## Agent skills\n\n### Planning files\n\n- `ROADMAP.md`: product roadmap\n",
+            encoding="utf-8",
+        )
+
+        result = self.run_cli("cruise-setup", "check")
+
+        self.assertNotIn("warning:", result.stdout)
+
+    def test_planning_warning_silent_when_no_instruction_file(self) -> None:
+        (self.root / "ROADMAP.md").write_text("# Product Roadmap\n", encoding="utf-8")
+        self.run_cli("cruise-setup", "apply")
+
+        result = self.run_cli("cruise-setup", "check")
+
+        self.assertIn("ROADMAP.md", result.stdout)
+        self.assertNotIn("warning:", result.stdout)
+
     def test_setup_check_reports_without_applying(self) -> None:
         result = self.run_cli("cruise-setup", "check")
 
