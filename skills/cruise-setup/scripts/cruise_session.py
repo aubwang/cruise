@@ -1150,6 +1150,9 @@ def parse_utc(value: str) -> datetime | None:
 
 def autonomy_counts() -> tuple[int, int]:
     text = read_text(CRUISE / "autonomy.log.md")
+    starts = list(re.finditer(r"^## \S+ started\b", text, flags=re.MULTILINE))
+    if starts:
+        text = text[starts[-1].end():]
     iterations = len(re.findall(r"checkpoint iteration\s+\d+", text))
     commits = len(re.findall(r"^- commit: (?!none$).+", text, flags=re.MULTILINE))
     return iterations, commits

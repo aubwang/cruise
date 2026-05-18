@@ -277,6 +277,44 @@ class CruiseSessionTest(unittest.TestCase):
         self.assertEqual(text.count("# cruise-gitignore:start"), 1)
         self.assertEqual(text.count("# cruise-gitignore:end"), 1)
 
+    def _start_autonomy(self, max_commits: int = 2, max_iterations: int = 5) -> None:
+        self.run_cli(
+            "autonomy", "start",
+            "--objective", "test",
+            "--acceptance-criteria", "tests pass",
+            "--allowed-scope", "tests/",
+            "--out-of-scope", "everything else",
+            "--minutes", "60",
+            "--max-iterations", str(max_iterations),
+            "--max-commits", str(max_commits),
+        )
+
+    def test_autonomy_counts_only_count_current_lease(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        self._start_autonomy(max_commits=2)
+        for i in range(1, 3):
+            self.run_cli(
+                "autonomy", "checkpoint",
+                "--iteration", str(i),
+                "--summary", f"slice {i}",
+                "--validation", "ok",
+                "--commit", f"abc{i}",
+                "--continue", "true",
+            )
+        self.run_cli("autonomy", "stop", "--reason", "manual")
+
+        status = self.run_cli("autonomy", "status")
+        self.assertIn("commits: 2/2", status.stdout)
+        self.assertIn("iterations: 2/5", status.stdout)
+
+        self._start_autonomy(max_commits=2)
+        status = self.run_cli("autonomy", "status")
+        self.assertIn("commits: 0/2", status.stdout)
+        self.assertIn("iterations: 0/5", status.stdout)
+
+        run = self.run_cli("autonomy", "run")
+        self.assertIn("Autonomy lease is active.", run.stdout)
+
     def test_setup_check_reports_without_applying(self) -> None:
         result = self.run_cli("cruise-setup", "check")
 
