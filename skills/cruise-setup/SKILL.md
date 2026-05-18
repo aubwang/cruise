@@ -6,49 +6,57 @@ disable-model-invocation: true
 
 # Setup Cruise
 
-Bootstrap Cruise first, then configure the repo-specific documentation conventions that the engineering skills assume.
+Cruise setup **wires the scaffold**. It does not migrate existing docs. After the scaffold is in place this skill walks the user through choosing the right root instruction file, writing the protocol fragment, recording the domain glossary and decision-state conventions, then auditing whether any existing planning material needs to move into the new layout.
 
-## 0. Bootstrap the protocol
+This is a prompt-driven skill that delegates atomic work to `cruise_session.py`. Confirm with the user before each step.
+
+## 0. Bootstrap the protocol script
 
 Resolve this skill's bundled `scripts/cruise_session.py` relative to the skill directory. If `.cruise/scripts/cruise_session.py` is missing or stale, copy the bundled script there and make it executable.
 
-Run `python3 .cruise/scripts/cruise_session.py cruise-setup check` first and show the setup report.
+Run `python3 .cruise/scripts/cruise_session.py cruise-setup check` first and show the setup report. The report distinguishes "protocol fragment present" (the Cruise marker block) from "agent-skills block present" (the `## Agent skills` block this skill writes).
 
-Run `python3 .cruise/scripts/cruise_session.py cruise-setup apply` only when the user explicitly approves applying setup changes. Preserve existing repo instructions, existing `CLAUDE.md -> AGENTS.md` symlinks, and existing ADR conventions.
+## 1. Apply the scaffold
 
-Setup does not generate repo-local skill adapter copies. The skills are installed through `npx skills`; setup only writes the neutral `.cruise/` protocol scaffold and root instruction fragments.
+Run `python3 .cruise/scripts/cruise_session.py cruise-setup apply` only when the user explicitly approves applying setup changes.
 
-## 1. Configure domain conventions
+`apply` writes only the neutral `.cruise/` protocol scaffold and root planning files (`HANDOFF.md`, `ROADMAP.md`). It does **not** touch `AGENTS.md` or `CLAUDE.md` — those are decided in step 2.
+
+The Cruise skills are installed through `npx skills`; setup does not generate repo-local skill adapter copies.
+
+## 2. Choose the root instruction file
+
+Pick the file to edit:
+
+- If `CLAUDE.md` exists, use it.
+- Else if `AGENTS.md` exists, use it.
+- If both exist as regular files, ask the user whether to keep both or symlink one to the other. The convention is `CLAUDE.md -> AGENTS.md` (single source of truth in AGENTS.md). Only collapse them if the user agrees.
+- If neither exists, ask the user which one to create — don't pick for them.
+
+Never create `AGENTS.md` when `CLAUDE.md` already exists (or vice versa). Existing `CLAUDE.md -> AGENTS.md` symlinks are preserved automatically: edits through the symlink land in `AGENTS.md`.
+
+## 3. Write the protocol fragment
+
+Run `python3 .cruise/scripts/cruise_session.py cruise-setup instructions <FILE>` with the chosen file (`AGENTS.md` or `CLAUDE.md`). This upserts the Cruise protocol marker block into that file. It does not touch the rest of the file.
+
+## 4. Configure domain conventions
 
 Record the per-repo conventions that the engineering skills assume:
+
 - **Domain glossary** — whether this repo uses root `CONTEXT.md` or `CONTEXT-MAP.md`
 - **Decision state** — where accepted ADRs live and where provisional planning decisions live
-
-This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write.
-
-## Process
-
-### 1. Explore
 
 Look at the current repo to understand its starting state. Read whatever exists; don't assume:
 
 - `git remote -v` and `.git/config` — is this a GitHub repo? Which one?
-- `AGENTS.md` and `CLAUDE.md` at the repo root — does either exist? Is there already an `## Agent skills` section in either?
+- `AGENTS.md` and `CLAUDE.md` at the repo root — is there already an `## Agent skills` section?
 - `CONTEXT.md` and `CONTEXT-MAP.md` at the repo root
 - `docs/adr/` and any `src/*/docs/adr/` directories for accepted decisions that already shipped
 - `.cruise/spec.md` for provisional decisions that are not shipped yet
 
-### 2. Present findings and ask
-
-Summarise what's present and what's missing. Present the follow section(s) **one at a time** — present a section, get the user's answer, then move to the next.
-
-Assume the user does not know what these terms mean. Each section starts with a short explainer (what it is, why these skills need it, what changes if they pick differently). Then show the choices and the default.
-
-**Section: Domain glossary.**
+Summarise what's present and what's missing, then ask:
 
 > Explainer: Some skills (`shape`, `diagnose`, `tdd`) read a `CONTEXT.md` file to learn the project's domain language, `docs/adr/` for accepted decisions that already shipped, and `.cruise/spec.md` for provisional decisions that are still planning state. They need to know whether the repo has one global context or multiple (e.g. a monorepo with separate frontend/backend contexts) so they look in the right place.
-
-Confirm the layout:
 
 - **Single-context** — one `CONTEXT.md` + `docs/adr/` at the repo root. Most repos are this.
 - **Multi-context** — `CONTEXT-MAP.md` at the root pointing to per-context `CONTEXT.md` files (typically a monorepo).
@@ -59,27 +67,9 @@ Decision rule:
 - `.cruise/spec.md` `## Provisional decisions` contains important unshipped decisions, rejected ideas, and planning constraints that future agents should remember.
 - Do not put proposed ADRs in `docs/adr/`. Promote a provisional decision to an accepted ADR only when the first commit ships it and reversal would be costly.
 
-### 3. Confirm and edit
+## 5. Edit the `## Agent skills` block
 
-Show the user a draft of:
-
-- The `## Agent skills` block to add to whichever of `CLAUDE.md` / `AGENTS.md` is being edited (see step 4 for selection rules)
-
-Let them edit before writing.
-
-### 4. Write
-
-**Pick the file to edit:**
-
-- If `CLAUDE.md` exists, edit it.
-- Else if `AGENTS.md` exists, edit it.
-- If neither exists, ask the user which one to create — don't pick for them.
-
-Never create `AGENTS.md` when `CLAUDE.md` already exists (or vice versa) — always edit the one that's already there. If both files exist, symlink them together.
-
-If an `## Agent skills` block already exists in the chosen file, update its contents in-place rather than appending a duplicate. Don't overwrite user edits to the surrounding sections.
-
-The block:
+Show the user a draft and let them edit before writing. If a block already exists, update its contents in-place rather than appending a duplicate. Don't overwrite user edits to surrounding sections.
 
 ```markdown
 ## Agent skills
@@ -93,6 +83,19 @@ The block:
 Accepted shipped ADRs live in `docs/adr/`. Provisional unshipped decisions live in `.cruise/spec.md` under `## Provisional decisions`.
 ```
 
-### 5. Done
+## 6. Migration audit
+
+Setup wires the scaffold. It does not migrate existing planning documents. Walk the repo with the user and decide whether any of these need work:
+
+- **CONTEXT.md / CONTEXT-MAP.md** — does the domain glossary reflect the current codebase, or is it stale?
+- **`docs/adr/`** — are all entries accepted shipped decisions? Move anything that's still planning out.
+- **`.cruise/spec.md`** — does it list the provisional decisions that aren't shipped yet? Carry over anything from prior planning docs.
+- **`.cruise/plan.md`** — does it reflect the current slice? If a `docs/PLAN.md` or similar exists with live plan material, propose moving it here.
+- **`ROADMAP.md`** — does it hold longer-term mutable intent (as opposed to the current slice)?
+- **`HANDOFF.md`** — is it real session state, or just the starter template?
+
+Don't migrate anything without asking. Surface what's stale, propose moves, let the user decide.
+
+## 7. Done
 
 Tell the user the setup is complete and which engineering skills will now read from `CONTEXT.md` or `CONTEXT-MAP.md`, `docs/adr/`, and `.cruise/spec.md`. Mention they can edit the `## Agent skills` block later if they change the domain-doc layout.

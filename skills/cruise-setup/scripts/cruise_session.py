@@ -427,6 +427,9 @@ def atomic_write(path: Path, text: str) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as tmp:
             tmp.write(text)
+        umask = os.umask(0)
+        os.umask(umask)
+        os.chmod(tmp_name, 0o666 & ~umask)
         os.replace(tmp_name, path)
     finally:
         if os.path.exists(tmp_name):
@@ -895,9 +898,15 @@ def sync_package_skills() -> None:
         chmod_if_exists(path)
 
 
-def init_instruction_files() -> None:
-    upsert_protocol_fragment(ROOT / "CLAUDE.md", CLAUDE_FRAGMENT)
-    upsert_protocol_fragment(ROOT / "AGENTS.md", AGENTS_FRAGMENT)
+INSTRUCTION_FRAGMENTS = {"CLAUDE.md": CLAUDE_FRAGMENT, "AGENTS.md": AGENTS_FRAGMENT}
+
+
+def write_instructions(path: Path) -> None:
+    fragment = INSTRUCTION_FRAGMENTS.get(path.name, AGENTS_FRAGMENT)
+    upsert_protocol_fragment(path, fragment)
+
+
+AGENT_SKILLS_HEADING = "## Agent skills"
 
 
 def instruction_file_lines() -> list[str]:
@@ -912,14 +921,15 @@ def instruction_file_lines() -> list[str]:
         else:
             state = "missing"
         text = read_text(path)
-        fragment = "fragment present" if PROTOCOL_MARKER_START in text else "fragment missing"
-        lines.append(f"- {name}: {state}, {fragment}")
+        protocol = "protocol fragment present" if PROTOCOL_MARKER_START in text else "protocol fragment missing"
+        agent_skills = "agent-skills block present" if AGENT_SKILLS_HEADING in text else "agent-skills block missing"
+        lines.append(f"- {name}: {state}, {protocol}, {agent_skills}")
     if (ROOT / "AGENTS.md").exists() and (ROOT / "CLAUDE.md").is_symlink():
         try:
             if (ROOT / "CLAUDE.md").resolve() == (ROOT / "AGENTS.md").resolve():
-                lines.append("- CLAUDE.md points at AGENTS.md; setup preserves the symlink.")
+                lines.append("- CLAUDE.md -> AGENTS.md symlink detected.")
         except FileNotFoundError:
-            lines.append("- CLAUDE.md is a broken symlink; setup will not replace it.")
+            lines.append("- CLAUDE.md is a broken symlink.")
     return lines
 
 
@@ -964,12 +974,23 @@ def setup_report() -> str:
 
 def apply_setup() -> None:
     init_common_files()
-    init_instruction_files()
 
 
 def cmd_setup(args: argparse.Namespace) -> None:
     if args.setup_cmd in {"check", "dry-run"}:
         print(setup_report(), end="")
+        return
+    if args.setup_cmd == "instructions":
+        arg_path = Path(args.file)
+        target = arg_path if arg_path.is_absolute() else ROOT / arg_path
+        if target.name not in INSTRUCTION_FRAGMENTS:
+            raise SystemExit(f"instructions target must be one of {sorted(INSTRUCTION_FRAGMENTS)}; got {target.name}")
+        write_instructions(target)
+        try:
+            label = target.relative_to(ROOT)
+        except ValueError:
+            label = target
+        print(f"Wrote Cruise protocol fragment to {label}.")
         return
     apply_setup()
     print("Applied Cruise setup.")
@@ -1167,6 +1188,9 @@ def build_parser() -> argparse.ArgumentParser:
     for name in ["check", "dry-run", "apply"]:
         item = setup_sub.add_parser(name)
         item.set_defaults(func=cmd_setup)
+    instructions = setup_sub.add_parser("instructions")
+    instructions.add_argument("file", help="AGENTS.md or CLAUDE.md (path relative to repo root)")
+    instructions.set_defaults(func=cmd_setup)
 
     package = sub.add_parser("package")
     package_sub = package.add_subparsers(dest="package_cmd", required=True)

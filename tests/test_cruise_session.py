@@ -43,10 +43,51 @@ class CruiseSessionTest(unittest.TestCase):
         self.assertTrue((self.root / ".cruise" / "config.json").exists())
         self.assertTrue((self.root / ".cruise" / "spec.md").exists())
         self.assertIn("provisional decisions", (self.root / ".cruise" / "protocol.md").read_text(encoding="utf-8"))
-        self.assertIn("Read `.cruise/protocol.md`", (self.root / "AGENTS.md").read_text(encoding="utf-8"))
-        self.assertIn("Read `.cruise/protocol.md`", (self.root / "CLAUDE.md").read_text(encoding="utf-8"))
+        self.assertFalse((self.root / "AGENTS.md").exists())
+        self.assertFalse((self.root / "CLAUDE.md").exists())
         self.assertIn("repo-local adapter skill copies are not generated", result.stdout)
         self.assertIn("Provisional decisions", (self.root / ".cruise" / "spec.md").read_text(encoding="utf-8"))
+
+    def test_instructions_writes_protocol_fragment_to_chosen_file(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        result = self.run_cli("cruise-setup", "instructions", "AGENTS.md")
+
+        self.assertIn("Wrote Cruise protocol fragment to AGENTS.md.", result.stdout)
+        agents = (self.root / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("<!-- cruise-session-protocol:start -->", agents)
+        self.assertIn("Read `.cruise/protocol.md`", agents)
+        self.assertFalse((self.root / "CLAUDE.md").exists())
+
+    def test_instructions_preserves_existing_content_and_symlink(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        agents = self.root / "AGENTS.md"
+        agents.write_text("# Existing Instructions\n\nKeep this.\n", encoding="utf-8")
+        (self.root / "CLAUDE.md").symlink_to("AGENTS.md")
+
+        self.run_cli("cruise-setup", "instructions", "CLAUDE.md")
+
+        self.assertTrue((self.root / "CLAUDE.md").is_symlink())
+        text = agents.read_text(encoding="utf-8")
+        self.assertIn("Keep this.", text)
+        self.assertEqual(text.count("<!-- cruise-session-protocol:start -->"), 1)
+
+    def test_instructions_rejects_unsupported_filename(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        result = subprocess.run(
+            [sys.executable, str(self.script), "cruise-setup", "instructions", "README.md"],
+            cwd=self.root,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("instructions target must be one of", result.stderr)
+
+    def test_apply_creates_files_with_normal_permissions(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        mode = (self.root / ".cruise" / "protocol.md").stat().st_mode & 0o777
+        self.assertNotEqual(mode & 0o077, 0)
 
     def test_package_sync_creates_neutral_installable_skills(self) -> None:
         result = self.run_cli("package", "sync")
@@ -87,19 +128,6 @@ class CruiseSessionTest(unittest.TestCase):
         self.assertTrue((self.root / ".cruise" / "sessions" / "latest.md").exists())
         self.assertIn("## Pending artifacts", (self.root / "HANDOFF.md").read_text(encoding="utf-8"))
         self.assertIn("## Provisional decisions", (self.root / "HANDOFF.md").read_text(encoding="utf-8"))
-
-    def test_setup_preserves_claude_symlink_to_agents(self) -> None:
-        agents = self.root / "AGENTS.md"
-        agents.write_text("# Existing Instructions\n\nKeep this.\n", encoding="utf-8")
-        (self.root / "CLAUDE.md").symlink_to("AGENTS.md")
-
-        self.run_cli("cruise-setup", "apply")
-
-        self.assertTrue((self.root / "CLAUDE.md").is_symlink())
-        text = agents.read_text(encoding="utf-8")
-        self.assertIn("Keep this.", text)
-        self.assertEqual(text.count("<!-- cruise-session-protocol:start -->"), 1)
-        self.assertIn("Read `.cruise/protocol.md`", text)
 
     def test_setup_check_reports_without_applying(self) -> None:
         result = self.run_cli("cruise-setup", "check")
