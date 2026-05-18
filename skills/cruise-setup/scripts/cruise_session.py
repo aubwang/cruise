@@ -1148,6 +1148,17 @@ def parse_utc(value: str) -> datetime | None:
         return None
 
 
+def auto_stop_if_expired() -> bool:
+    data, _body = autonomy_data()
+    if data.get("status") != "active":
+        return False
+    expires = parse_utc(data.get("expires_at", ""))
+    if expires and now() >= expires:
+        autonomy_stop("time-expired")
+        return True
+    return False
+
+
 def autonomy_counts() -> tuple[int, int]:
     text = read_text(CRUISE / "autonomy.log.md")
     starts = list(re.finditer(r"^## \S+ started\b", text, flags=re.MULTILINE))
@@ -1188,6 +1199,8 @@ def check_autonomy_endpoints() -> str | None:
 
 
 def cmd_autonomy(args: argparse.Namespace) -> None:
+    if args.autonomy_cmd in {"start", "status", "checkpoint"}:
+        auto_stop_if_expired()
     if args.autonomy_cmd == "start":
         data, _ = autonomy_data()
         if data.get("status") == "active":

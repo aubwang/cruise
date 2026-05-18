@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import sys
@@ -314,6 +315,33 @@ class CruiseSessionTest(unittest.TestCase):
 
         run = self.run_cli("autonomy", "run")
         self.assertIn("Autonomy lease is active.", run.stdout)
+
+    def _expire_lease(self) -> None:
+        path = self.root / ".cruise" / "autonomy.md"
+        text = path.read_text(encoding="utf-8")
+        text = re.sub(r"expires_at: .+", "expires_at: 2020-01-01T00:00:00Z", text)
+        path.write_text(text, encoding="utf-8")
+
+    def test_autonomy_status_auto_stops_expired_lease(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        self._start_autonomy()
+        self._expire_lease()
+
+        result = self.run_cli("autonomy", "status")
+
+        self.assertIn("status: stopped", result.stdout)
+        log = (self.root / ".cruise" / "autonomy.log.md").read_text(encoding="utf-8")
+        self.assertIn("time-expired", log)
+
+    def test_autonomy_start_succeeds_after_expired_lease(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        self._start_autonomy()
+        self._expire_lease()
+
+        self._start_autonomy()
+
+        status = self.run_cli("autonomy", "status")
+        self.assertIn("status: active", status.stdout)
 
     def test_setup_check_reports_without_applying(self) -> None:
         result = self.run_cli("cruise-setup", "check")
