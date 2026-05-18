@@ -45,8 +45,34 @@ class CruiseSessionTest(unittest.TestCase):
         self.assertIn("provisional decisions", (self.root / ".cruise" / "protocol.md").read_text(encoding="utf-8"))
         self.assertFalse((self.root / "AGENTS.md").exists())
         self.assertFalse((self.root / "CLAUDE.md").exists())
+        self.assertFalse((self.root / "ROADMAP.md").exists())
+        self.assertFalse((self.root / "HANDOFF.md").exists())
         self.assertIn("repo-local adapter skill copies are not generated", result.stdout)
         self.assertIn("Provisional decisions", (self.root / ".cruise" / "spec.md").read_text(encoding="utf-8"))
+
+    def test_apply_does_not_overwrite_existing_product_roadmap(self) -> None:
+        roadmap = self.root / "ROADMAP.md"
+        roadmap.write_text("# Product Roadmap\n\nShip v2 in Q3.\n", encoding="utf-8")
+        plan = self.root / "docs" / "PLAN.md"
+        plan.parent.mkdir(parents=True)
+        plan.write_text("# Implementation Status\n\nMilestone 1 in progress.\n", encoding="utf-8")
+
+        result = self.run_cli("cruise-setup", "apply")
+
+        self.assertIn("Ship v2 in Q3.", roadmap.read_text(encoding="utf-8"))
+        self.assertNotIn("Neutral `.cruise/` filesystem protocol", roadmap.read_text(encoding="utf-8"))
+        self.assertIn("Milestone 1 in progress.", plan.read_text(encoding="utf-8"))
+        self.assertIn("## Planning files", result.stdout)
+        self.assertIn("ROADMAP.md", result.stdout)
+        self.assertIn("docs/PLAN.md", result.stdout)
+        self.assertIn("Cruise does not own", result.stdout)
+
+    def test_plan_md_template_is_clearly_a_placeholder(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        plan = (self.root / ".cruise" / "plan.md").read_text(encoding="utf-8")
+        self.assertIn("(not set", plan)
+        self.assertNotIn("Set up the repo-local Cruise session protocol", plan)
+        self.assertNotIn("Create the `.cruise/` protocol filesystem", plan)
 
     def test_instructions_writes_protocol_fragment_to_chosen_file(self) -> None:
         self.run_cli("cruise-setup", "apply")

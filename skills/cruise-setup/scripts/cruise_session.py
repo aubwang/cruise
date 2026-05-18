@@ -138,74 +138,30 @@ Do not promote spec intent to an ADR until a shipped code change makes the decis
 
 PLAN_MD = """# Cruise Plan
 
+This file is the **current active slice** for the next session. Replace this
+placeholder during setup or before the first session that uses
+`.cruise/plan.md`. Longer-term product roadmap and implementation status
+belong in repo-owned files (typically `ROADMAP.md` and `docs/PLAN.md`), not
+here.
+
 ## Current objective
 
-Set up the repo-local Cruise session protocol.
+(not set — replace before starting a slice)
 
 ## Current slice
 
-- Create the `.cruise/` protocol filesystem.
-- Provide handoff, nudge, resume, and bounded-autonomy commands.
-- Validate the no-commit handoff path.
+(not set)
 
 ## Pending artifacts
 
-None.
+(none)
 
 ## Verification
 
-Run the validation commands listed in the implementation request.
+(not set)
 """
 
-ROADMAP_MD = """# Roadmap
-
-This file is mutable intent and scope, not the canonical protocol contract.
-
-## v1
-
-- Neutral `.cruise/` filesystem protocol.
-- Durable plan, nudge, session, next-session, handoff, spec, and ADR locations.
-- Optional human-granted bounded autonomy lease.
-
-## Later
-
-- Add richer tool-specific hooks only where they remain thin and optional.
-"""
-
-HANDOFF_MD = """# Handoff
-
-This file is a generated/current-state index. The canonical source of truth is `.cruise/protocol.md` plus the files under `.cruise/`.
-
-## Current objective
-
-Set up the Cruise session protocol.
-
-## Latest commits
-
-Not recorded yet.
-
-## Active ADRs
-
-None.
-
-## Provisional decisions
-
-None.
-
-## Pending artifacts
-
-None.
-
-## Next action
-
-Run `python3 .cruise/scripts/cruise_session.py handoff --no-commit` after initialization.
-
-## Next prompt
-
-See `.cruise/next.md`.
-"""
-
-NEXT_TEMPLATE = """Read `.cruise/protocol.md`, `.cruise/sessions/latest.md`, `.cruise/plan.md`, `.cruise/spec.md`, `.cruise/nudge.md`, `HANDOFF.md`, and `ROADMAP.md`.
+NEXT_TEMPLATE = """Read `.cruise/protocol.md`, `.cruise/sessions/latest.md`, `.cruise/plan.md`, `.cruise/spec.md`, `.cruise/nudge.md`, and any repo planning docs listed in the `## Agent skills` block of `AGENTS.md` or `CLAUDE.md` (typically `HANDOFF.md`, `ROADMAP.md`, `docs/PLAN.md`).
 
 Then summarize:
 1. current objective,
@@ -456,6 +412,21 @@ def json_text(data: dict[str, object]) -> str:
 def find_adr_candidates() -> list[str]:
     candidates = ["docs/adr", "docs/adrs", "adr", "adrs", "decisions", "docs/decisions"]
     return [candidate for candidate in candidates if (ROOT / candidate).exists()]
+
+
+PLANNING_DOC_CANDIDATES = [
+    "ROADMAP.md",
+    "docs/ROADMAP.md",
+    "docs/roadmap.md",
+    "PLAN.md",
+    "docs/PLAN.md",
+    "docs/plan.md",
+    "HANDOFF.md",
+]
+
+
+def find_planning_docs() -> list[str]:
+    return [candidate for candidate in PLANNING_DOC_CANDIDATES if (ROOT / candidate).exists()]
 
 
 def default_config() -> dict[str, object]:
@@ -842,8 +813,6 @@ def init_common_files() -> None:
     ensure_file(CRUISE / "autonomy.md", AUTONOMY_INACTIVE)
     ensure_file(CRUISE / "autonomy.log.md", AUTONOMY_LOG)
     ensure_file(current_adr_dir / ".gitkeep", "")
-    ensure_file(ROOT / "HANDOFF.md", HANDOFF_MD)
-    ensure_file(ROOT / "ROADMAP.md", ROADMAP_MD)
 
 
 SKILL_NAMES = [
@@ -944,8 +913,6 @@ def setup_report() -> str:
         CRUISE / "spec.md",
         CRUISE / "next.md",
         CRUISE / "nudge.md",
-        ROOT / "HANDOFF.md",
-        ROOT / "ROADMAP.md",
     ]:
         state = "present" if path.exists() else "missing"
         lines.append(f"- {path_label(path)}: {state}")
@@ -959,6 +926,14 @@ def setup_report() -> str:
         lines.append("- detected ADR-like directories: none")
     if len(candidates) > 1:
         lines.append("- warning: multiple ADR-like directories exist; set `.cruise/config.json` explicitly if needed.")
+    lines.append("")
+    lines.append("## Planning files")
+    planning_docs = find_planning_docs()
+    if planning_docs:
+        lines.append(f"- detected: {', '.join(planning_docs)}")
+        lines.append("- reconcile with `.cruise/plan.md` (current active slice). Cruise does not own `ROADMAP.md`, `docs/PLAN.md`, or similar product files — leave them under repo ownership.")
+    else:
+        lines.append("- detected: none")
     lines.append("")
     lines.append("## Root Instructions")
     lines.extend(instruction_file_lines())
@@ -1053,7 +1028,9 @@ def cmd_handoff(args: argparse.Namespace) -> None:
 
 
 def cmd_resume(_args: argparse.Namespace) -> None:
-    for path in [CRUISE / "next.md", SESSIONS / "latest.md", CRUISE / "plan.md", CRUISE / "nudge.md", ROOT / "HANDOFF.md", ROOT / "ROADMAP.md"]:
+    cruise_paths = [CRUISE / "next.md", SESSIONS / "latest.md", CRUISE / "plan.md", CRUISE / "nudge.md"]
+    optional_paths = [ROOT / candidate for candidate in PLANNING_DOC_CANDIDATES if (ROOT / candidate).exists()]
+    for path in cruise_paths + optional_paths:
         print(f"\n--- {path.relative_to(ROOT)} ---")
         text = read_text(path).strip()
         print(text if text else "(empty)")

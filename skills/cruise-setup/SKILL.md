@@ -6,21 +6,42 @@ disable-model-invocation: true
 
 # Setup Cruise
 
-Cruise setup **wires the scaffold**. It does not migrate existing docs. After the scaffold is in place this skill walks the user through choosing the right root instruction file, writing the protocol fragment, recording the domain glossary and decision-state conventions, then auditing whether any existing planning material needs to move into the new layout.
+Cruise setup **wires the scaffold**. It does not own product planning files and it does not migrate existing docs. After the scaffold is in place this skill walks the user through choosing the right root instruction file, writing the protocol fragment, recording the domain glossary and decision-state conventions, then reconciling any detected planning files (`ROADMAP.md`, `docs/PLAN.md`, etc.) before declaring setup done.
 
-This is a prompt-driven skill that delegates atomic work to `cruise_session.py`. Confirm with the user before each step.
+This is a prompt-driven skill that delegates atomic work to `cruise_session.py`. Confirm with the user before each step. Do not skip the reconciliation step — a stale `.cruise/plan.md` will mislead future agents.
+
+## What Cruise owns vs. doesn't own
+
+**Cruise-owned (the scaffold writes these):**
+
+- `.cruise/protocol.md` — Cruise protocol contract
+- `.cruise/plan.md` — current active slice for the next session (small, ephemeral)
+- `.cruise/spec.md` — provisional unshipped decisions
+- `.cruise/next.md`, `.cruise/sessions/`, `.cruise/nudge.md`, etc.
+- `.cruise/config.json`
+
+**Repo-owned (Cruise must not write or repurpose these):**
+
+- `ROADMAP.md` — product roadmap
+- `docs/PLAN.md` (or `PLAN.md`) — product implementation status / milestones
+- `HANDOFF.md` — written by the `handoff` command on first use, but the *meaning* belongs to whatever the repo wants
+- `CONTEXT.md` / `CONTEXT-MAP.md`
+- `docs/adr/` — accepted shipped ADRs
+- `AGENTS.md` / `CLAUDE.md`
+
+If any repo-owned file is missing, leave it missing. Do not create it from a template.
 
 ## 0. Bootstrap the protocol script
 
 Resolve this skill's bundled `scripts/cruise_session.py` relative to the skill directory. If `.cruise/scripts/cruise_session.py` is missing or stale, copy the bundled script there and make it executable.
 
-Run `python3 .cruise/scripts/cruise_session.py cruise-setup check` first and show the setup report. The report distinguishes "protocol fragment present" (the Cruise marker block) from "agent-skills block present" (the `## Agent skills` block this skill writes).
+Run `python3 .cruise/scripts/cruise_session.py cruise-setup check` first and show the setup report. The report distinguishes "protocol fragment present" (the Cruise marker block) from "agent-skills block present" (the `## Agent skills` block this skill writes), and surfaces any detected planning files under `## Planning files`.
 
 ## 1. Apply the scaffold
 
 Run `python3 .cruise/scripts/cruise_session.py cruise-setup apply` only when the user explicitly approves applying setup changes.
 
-`apply` writes only the neutral `.cruise/` protocol scaffold and root planning files (`HANDOFF.md`, `ROADMAP.md`). It does **not** touch `AGENTS.md` or `CLAUDE.md` — those are decided in step 2.
+`apply` writes only the Cruise-owned files listed above (under `.cruise/` plus `.cruise/config.json`). It does **not** create `AGENTS.md`, `CLAUDE.md`, `ROADMAP.md`, `HANDOFF.md`, `docs/PLAN.md`, or any other repo-owned file.
 
 The Cruise skills are installed through `npx skills`; setup does not generate repo-local skill adapter copies.
 
@@ -71,6 +92,8 @@ Decision rule:
 
 Show the user a draft and let them edit before writing. If a block already exists, update its contents in-place rather than appending a duplicate. Don't overwrite user edits to surrounding sections.
 
+In the block, name any **repo-owned planning files** the engineering skills should read at session start (typically `ROADMAP.md`, `docs/PLAN.md`, `HANDOFF.md`) so future agents go to the right place for product context.
+
 ```markdown
 ## Agent skills
 
@@ -81,21 +104,38 @@ Show the user a draft and let them edit before writing. If a block already exist
 ### Decisions
 
 Accepted shipped ADRs live in `docs/adr/`. Provisional unshipped decisions live in `.cruise/spec.md` under `## Provisional decisions`.
+
+### Planning files
+
+[list the repo-owned planning files agents should consult — e.g. `ROADMAP.md` for product roadmap, `docs/PLAN.md` for implementation status and milestones.]
 ```
 
-## 6. Migration audit
+## 6. Reconcile `.cruise/plan.md` (required)
 
-Setup wires the scaffold. It does not migrate existing planning documents. Walk the repo with the user and decide whether any of these need work:
+`apply` writes `.cruise/plan.md` as a placeholder ("not set"). If you leave it that way, future agents will follow the placeholder instead of the real plan. Resolve this **before declaring setup done**.
 
-- **CONTEXT.md / CONTEXT-MAP.md** — does the domain glossary reflect the current codebase, or is it stale?
+The setup report's `## Planning files` section lists any detected planning docs (`ROADMAP.md`, `docs/PLAN.md`, `PLAN.md`, `HANDOFF.md`, etc.). For each one, ask the user:
+
+1. **Is this still authoritative?** If yes, it stays where it is — Cruise does not move or rewrite it.
+2. **Does it contain a current active slice that should be in `.cruise/plan.md`?** If yes, the user (or you, with their approval) copies the slice content into `.cruise/plan.md`.
+3. **What should the durable split be?** Confirm and record in the `## Agent skills` block from step 5. The default split is:
+   - `.cruise/plan.md` — current active slice (ephemeral, next session)
+   - `ROADMAP.md` — product roadmap (longer-term mutable intent)
+   - `docs/PLAN.md` — product implementation status / milestones
+   - `.cruise/protocol.md` — Cruise protocol details
+
+After this step, `.cruise/plan.md` must either contain a real current slice or have been intentionally left as placeholder with the user's confirmation that there is no active slice yet.
+
+## 7. Audit the rest
+
+Walk the remaining repo state with the user. Surface anything stale; propose moves; let the user decide:
+
+- **CONTEXT.md / CONTEXT-MAP.md** — does the domain glossary reflect the current codebase?
 - **`docs/adr/`** — are all entries accepted shipped decisions? Move anything that's still planning out.
 - **`.cruise/spec.md`** — does it list the provisional decisions that aren't shipped yet? Carry over anything from prior planning docs.
-- **`.cruise/plan.md`** — does it reflect the current slice? If a `docs/PLAN.md` or similar exists with live plan material, propose moving it here.
-- **`ROADMAP.md`** — does it hold longer-term mutable intent (as opposed to the current slice)?
-- **`HANDOFF.md`** — is it real session state, or just the starter template?
 
-Don't migrate anything without asking. Surface what's stale, propose moves, let the user decide.
+Don't migrate anything without asking.
 
-## 7. Done
+## 8. Done
 
-Tell the user the setup is complete and which engineering skills will now read from `CONTEXT.md` or `CONTEXT-MAP.md`, `docs/adr/`, and `.cruise/spec.md`. Mention they can edit the `## Agent skills` block later if they change the domain-doc layout.
+Tell the user the setup is complete, name the durable split that was confirmed in step 6, and which engineering skills will now read from `CONTEXT.md` or `CONTEXT-MAP.md`, `docs/adr/`, and `.cruise/spec.md`. Mention they can edit the `## Agent skills` block later if they change the domain-doc layout.
