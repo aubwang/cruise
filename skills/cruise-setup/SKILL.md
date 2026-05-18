@@ -41,7 +41,9 @@ Run `python3 .cruise/scripts/cruise_session.py cruise-setup check` first and sho
 
 Run `python3 .cruise/scripts/cruise_session.py cruise-setup apply` only when the user explicitly approves applying setup changes.
 
-`apply` writes only the Cruise-owned files listed above (under `.cruise/` plus `.cruise/config.json`). It does **not** create `AGENTS.md`, `CLAUDE.md`, `ROADMAP.md`, `HANDOFF.md`, `docs/PLAN.md`, or any other repo-owned file.
+`apply` writes only the Cruise-owned files listed above (under `.cruise/` plus `.cruise/config.json`) and upserts a managed block in `.gitignore` (between `# cruise-gitignore:start` and `# cruise-gitignore:end`) that ignores Cruise session state (`.cruise/plan.md`, `.cruise/spec.md`, `.cruise/next.md`, nudges, autonomy state, sessions, `HANDOFF.md`). Existing `.gitignore` lines outside the markers are preserved.
+
+`apply` does **not** create `AGENTS.md`, `CLAUDE.md`, `ROADMAP.md`, `HANDOFF.md`, `docs/PLAN.md`, or any other repo-owned file.
 
 The Cruise skills are installed through `npx skills`; setup does not generate repo-local skill adapter copies.
 

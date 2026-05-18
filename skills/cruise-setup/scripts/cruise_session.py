@@ -41,6 +41,25 @@ DEFAULT_CONFIG = {
 PROTOCOL_MARKER_START = "<!-- cruise-session-protocol:start -->"
 PROTOCOL_MARKER_END = "<!-- cruise-session-protocol:end -->"
 
+GITIGNORE_MARKER_START = "# cruise-gitignore:start"
+GITIGNORE_MARKER_END = "# cruise-gitignore:end"
+
+CRUISE_GITIGNORE_FRAGMENT = f"""{GITIGNORE_MARKER_START}
+# Managed by cruise-setup. Cruise session state — ephemeral, per-clone.
+.cruise/plan.md
+.cruise/spec.md
+.cruise/next.md
+.cruise/nudge.md
+.cruise/nudges.log.md
+.cruise/autonomy.md
+.cruise/autonomy.log.md
+.cruise/debug/
+.cruise/sessions/*
+!.cruise/sessions/.gitkeep
+HANDOFF.md
+{GITIGNORE_MARKER_END}
+"""
+
 
 CLAUDE_FRAGMENT = f"""{PROTOCOL_MARKER_START}
 Read `.cruise/protocol.md` at session start.
@@ -955,6 +974,13 @@ def setup_report() -> str:
     ]:
         state = "present" if path.exists() else "missing"
         lines.append(f"- {path_label(path)}: {state}")
+    gitignore_text = read_text(ROOT / ".gitignore")
+    if GITIGNORE_MARKER_START in gitignore_text:
+        lines.append("- .gitignore: cruise block present")
+    elif gitignore_text:
+        lines.append("- .gitignore: present, cruise block missing")
+    else:
+        lines.append("- .gitignore: missing")
     lines.append("")
     lines.append("## Configuration")
     lines.append(f"- adr_dir: {config.get('adr_dir', DEFAULT_ADR_DIR)}")
@@ -989,8 +1015,13 @@ def setup_report() -> str:
     return "\n".join(lines) + "\n"
 
 
+def init_gitignore() -> None:
+    upsert_marked(ROOT / ".gitignore", CRUISE_GITIGNORE_FRAGMENT, GITIGNORE_MARKER_START, GITIGNORE_MARKER_END)
+
+
 def apply_setup() -> None:
     init_common_files()
+    init_gitignore()
 
 
 def cmd_setup(args: argparse.Namespace) -> None:

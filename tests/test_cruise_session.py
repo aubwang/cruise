@@ -249,6 +249,34 @@ class CruiseSessionTest(unittest.TestCase):
         self.assertIn("Current objective", result.stdout)
         self.assertNotIn("Current objective and Current slice", result.stdout)
 
+    def test_apply_creates_gitignore_with_cruise_block(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+
+        gitignore = (self.root / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("# cruise-gitignore:start", gitignore)
+        self.assertIn("# cruise-gitignore:end", gitignore)
+        for entry in [".cruise/plan.md", ".cruise/sessions/*", "!.cruise/sessions/.gitkeep", "HANDOFF.md"]:
+            self.assertIn(entry, gitignore)
+
+    def test_apply_preserves_existing_gitignore_entries(self) -> None:
+        gitignore = self.root / ".gitignore"
+        gitignore.write_text("node_modules/\n.env\n", encoding="utf-8")
+
+        self.run_cli("cruise-setup", "apply")
+
+        text = gitignore.read_text(encoding="utf-8")
+        self.assertIn("node_modules/", text)
+        self.assertIn(".env", text)
+        self.assertIn("# cruise-gitignore:start", text)
+
+    def test_apply_is_idempotent_for_gitignore(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        self.run_cli("cruise-setup", "apply")
+
+        text = (self.root / ".gitignore").read_text(encoding="utf-8")
+        self.assertEqual(text.count("# cruise-gitignore:start"), 1)
+        self.assertEqual(text.count("# cruise-gitignore:end"), 1)
+
     def test_setup_check_reports_without_applying(self) -> None:
         result = self.run_cli("cruise-setup", "check")
 
