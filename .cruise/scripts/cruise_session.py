@@ -7,7 +7,6 @@ import argparse
 import json
 import os
 import re
-import shutil
 import subprocess
 import tempfile
 import uuid
@@ -41,8 +40,6 @@ DEFAULT_CONFIG = {
 
 PROTOCOL_MARKER_START = "<!-- cruise-session-protocol:start -->"
 PROTOCOL_MARKER_END = "<!-- cruise-session-protocol:end -->"
-LEGACY_PROTOCOL_MARKER_START = f"<!-- {'a'}{'i'}-session-protocol:start -->"
-LEGACY_PROTOCOL_MARKER_END = f"<!-- {'a'}{'i'}-session-protocol:end -->"
 
 
 CLAUDE_FRAGMENT = f"""{PROTOCOL_MARKER_START}
@@ -571,16 +568,6 @@ def upsert_marked(path: Path, fragment: str, start: str, end: str) -> None:
 
 
 def upsert_protocol_fragment(path: Path, fragment: str) -> None:
-    current = read_text(path)
-    if LEGACY_PROTOCOL_MARKER_START in current and LEGACY_PROTOCOL_MARKER_END in current:
-        pattern = re.compile(
-            re.escape(LEGACY_PROTOCOL_MARKER_START)
-            + r".*?"
-            + re.escape(LEGACY_PROTOCOL_MARKER_END),
-            re.DOTALL,
-        )
-        write_path = path.resolve(strict=False) if path.is_symlink() else path
-        atomic_write(write_path, pattern.sub(fragment.strip(), current))
     upsert_marked(path, fragment, PROTOCOL_MARKER_START, PROTOCOL_MARKER_END)
 
 
@@ -870,10 +857,6 @@ SKILL_NAMES = [
 ]
 
 
-def skill_dir_name(name: str) -> str:
-    return name.replace(":", "-")
-
-
 def candidate_skills_roots(value: str | None = None) -> list[Path]:
     candidates: list[Path] = []
     if value:
@@ -930,8 +913,6 @@ def instruction_file_lines() -> list[str]:
             state = "missing"
         text = read_text(path)
         fragment = "fragment present" if PROTOCOL_MARKER_START in text else "fragment missing"
-        if LEGACY_PROTOCOL_MARKER_START in text:
-            fragment = "legacy fragment present"
         lines.append(f"- {name}: {state}, {fragment}")
     if (ROOT / "AGENTS.md").exists() and (ROOT / "CLAUDE.md").is_symlink():
         try:
@@ -982,74 +963,8 @@ def setup_report() -> str:
 
 
 def apply_setup() -> None:
-    cleanup_legacy_artifacts()
     init_common_files()
     init_instruction_files()
-
-
-def cleanup_legacy_artifacts() -> None:
-    legacy_prefix = "a" + "i"
-    legacy_skill_dirs = [
-        f"{legacy_prefix}-{suffix}"
-        for suffix in [
-            "handoff",
-            "kickoff",
-            "setup",
-            "grill",
-            "zoom-out",
-            "autonomy-start",
-            "autonomy-run",
-            "autonomy-stop",
-            "autostart",
-            "autorun",
-            "autostop",
-        ]
-    ]
-    legacy_skill_dirs.extend(skill_dir_name(f"cruise:{name}") for name in SKILL_NAMES)
-    for base in [ROOT / ".claude", ROOT / ".agents", ROOT / ".opencode"]:
-        for name in legacy_skill_dirs:
-            path = base / "skills" / name
-            if path.exists():
-                shutil.rmtree(path)
-        for name in SKILL_NAMES:
-            path = base / "skills" / skill_dir_name(name)
-            if path.exists():
-                shutil.rmtree(path)
-    agents_root = ROOT / ".agents" / "skills"
-    if agents_root.exists():
-        for path in agents_root.glob("*/agents/openai.yaml"):
-            path.unlink()
-            if not any(path.parent.iterdir()):
-                path.parent.rmdir()
-    generated_files = {
-        ROOT / ".claude" / "hooks" / "inject_nudge.py": "Cruise active nudge",
-        ROOT / ".claude" / "settings.example.json": ".claude/hooks/inject_nudge.py",
-        ROOT / ".codex" / "hooks" / "inject_nudge.py": "active Cruise nudge",
-        ROOT / ".codex" / "hooks.json": ".codex/hooks/inject_nudge.py",
-    }
-    for path, marker in generated_files.items():
-        if path.exists() and marker in read_text(path):
-            path.unlink()
-    for path in [
-        ROOT / ".claude" / "hooks",
-        ROOT / ".claude" / "skills",
-        ROOT / ".claude",
-        ROOT / ".agents" / "skills",
-        ROOT / ".agents",
-        ROOT / ".opencode" / "skills",
-        ROOT / ".opencode",
-        ROOT / ".codex" / "hooks",
-        ROOT / ".codex",
-    ]:
-        try:
-            path.rmdir()
-        except OSError:
-            pass
-    for path in [CRUISE / ("la" + "nes"), TEMPLATES / ("la" + "ne.md")]:
-        if path.is_dir():
-            shutil.rmtree(path)
-        elif path.exists():
-            path.unlink()
 
 
 def cmd_setup(args: argparse.Namespace) -> None:

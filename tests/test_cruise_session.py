@@ -46,15 +46,7 @@ class CruiseSessionTest(unittest.TestCase):
         self.assertIn("Read `.cruise/protocol.md`", (self.root / "AGENTS.md").read_text(encoding="utf-8"))
         self.assertIn("Read `.cruise/protocol.md`", (self.root / "CLAUDE.md").read_text(encoding="utf-8"))
         self.assertIn("repo-local adapter skill copies are not generated", result.stdout)
-        self.assertFalse((self.root / ".agents").exists())
-        self.assertFalse((self.root / ".claude").exists())
-        self.assertFalse((self.root / ".opencode").exists())
-        self.assertFalse((self.root / ".codex").exists())
         self.assertIn("Provisional decisions", (self.root / ".cruise" / "spec.md").read_text(encoding="utf-8"))
-        old_name = "ai" + "_session.py"
-        self.assertFalse((self.root / ".cruise" / "scripts" / old_name).exists())
-        removed_dir = "la" + "nes"
-        self.assertFalse((self.root / ".cruise" / removed_dir).exists())
 
     def test_package_sync_creates_neutral_installable_skills(self) -> None:
         result = self.run_cli("package", "sync")
