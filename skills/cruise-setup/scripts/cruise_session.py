@@ -858,7 +858,7 @@ def init_common_files() -> None:
 
 SKILL_NAMES = [
     "handoff",
-    "setup",
+    "cruise-setup",
     "grill",
     "zoom-out",
     "diagnose",
@@ -882,7 +882,7 @@ def candidate_skills_roots(value: str | None = None) -> list[Path]:
     if env:
         candidates.append(Path(env))
     script = Path(__file__).resolve()
-    if script.parent.name == "scripts" and script.parent.parent.name == "setup":
+    if script.parent.name == "scripts" and script.parent.parent.name == "cruise-setup":
         candidates.append(script.parents[2])
     candidates.append(ROOT / "skills")
     return [path.resolve() for path in candidates]
@@ -905,7 +905,7 @@ def sync_package_skills() -> None:
     missing = [name for name in SKILL_NAMES if not (skills_root / name / "SKILL.md").exists()]
     if missing:
         raise SystemExit("Missing installable skill folders: " + ", ".join(missing))
-    script_path = skills_root / "setup" / "scripts" / "cruise_session.py"
+    script_path = skills_root / "cruise-setup" / "scripts" / "cruise_session.py"
     atomic_write(script_path, read_text(CRUISE / "scripts" / "cruise_session.py"))
     chmod_if_exists(script_path)
     for path in (skills_root / "diagnose" / "scripts").glob("*"):
@@ -1247,7 +1247,7 @@ def build_parser() -> argparse.ArgumentParser:
     init = sub.add_parser("init")
     init.set_defaults(func=cmd_init)
 
-    setup = sub.add_parser("setup")
+    setup = sub.add_parser("cruise-setup")
     setup_sub = setup.add_subparsers(dest="setup_cmd", required=True)
     for name in ["check", "dry-run", "apply"]:
         item = setup_sub.add_parser(name)

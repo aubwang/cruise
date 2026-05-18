@@ -36,7 +36,7 @@ class CruiseSessionTest(unittest.TestCase):
         )
 
     def test_setup_apply_creates_protocol_without_adapters(self) -> None:
-        result = self.run_cli("setup", "apply")
+        result = self.run_cli("cruise-setup", "apply")
 
         self.assertIn("Applied Cruise setup.", result.stdout)
         self.assertTrue((self.root / ".cruise" / "protocol.md").exists())
@@ -60,14 +60,14 @@ class CruiseSessionTest(unittest.TestCase):
         result = self.run_cli("package", "sync")
 
         self.assertIn("Synced installable Cruise skills", result.stdout)
-        self.assertTrue((self.root / "skills" / "setup" / "SKILL.md").exists())
+        self.assertTrue((self.root / "skills" / "cruise-setup" / "SKILL.md").exists())
         self.assertTrue((self.root / "skills" / "autostart" / "SKILL.md").exists())
         self.assertTrue((self.root / "skills" / "autorun" / "SKILL.md").exists())
         self.assertTrue((self.root / "skills" / "autostop" / "SKILL.md").exists())
         self.assertFalse((self.root / "skills" / "kickoff" / "SKILL.md").exists())
-        self.assertTrue((self.root / "skills" / "setup" / "scripts" / "cruise_session.py").exists())
+        self.assertTrue((self.root / "skills" / "cruise-setup" / "scripts" / "cruise_session.py").exists())
         self.assertTrue((self.root / "skills" / "diagnose" / "scripts" / "hitl-loop.template.sh").exists())
-        setup_text = (self.root / "skills" / "setup" / "SKILL.md").read_text(encoding="utf-8")
+        setup_text = (self.root / "skills" / "cruise-setup" / "SKILL.md").read_text(encoding="utf-8")
         autostart_text = (self.root / "skills" / "autostart" / "SKILL.md").read_text(encoding="utf-8")
         autorun_text = (self.root / "skills" / "autorun" / "SKILL.md").read_text(encoding="utf-8")
         autostop_text = (self.root / "skills" / "autostop" / "SKILL.md").read_text(encoding="utf-8")
@@ -84,7 +84,7 @@ class CruiseSessionTest(unittest.TestCase):
         self.assertNotIn("allow_implicit_invocation", shape_text)
 
     def test_nudge_and_handoff_no_commit(self) -> None:
-        self.run_cli("setup", "apply")
+        self.run_cli("cruise-setup", "apply")
         self.run_cli("nudge", "set", "Move to seccomp after this slice")
         show = self.run_cli("nudge", "show")
         self.assertEqual(show.stdout.strip(), "Move to seccomp after this slice")
@@ -101,7 +101,7 @@ class CruiseSessionTest(unittest.TestCase):
         agents.write_text("# Existing Instructions\n\nKeep this.\n", encoding="utf-8")
         (self.root / "CLAUDE.md").symlink_to("AGENTS.md")
 
-        self.run_cli("setup", "apply")
+        self.run_cli("cruise-setup", "apply")
 
         self.assertTrue((self.root / "CLAUDE.md").is_symlink())
         text = agents.read_text(encoding="utf-8")
@@ -110,7 +110,7 @@ class CruiseSessionTest(unittest.TestCase):
         self.assertIn("Read `.cruise/protocol.md`", text)
 
     def test_setup_check_reports_without_applying(self) -> None:
-        result = self.run_cli("setup", "check")
+        result = self.run_cli("cruise-setup", "check")
 
         self.assertIn("# Cruise Setup Report", result.stdout)
         self.assertIn(".cruise/protocol.md: missing", result.stdout)

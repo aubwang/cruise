@@ -12,14 +12,14 @@ npx skills add aubwang/cruise
 Then, inside the repo where you want to use Cruise, ask your agent to run:
 
 ```text
-/setup
+/cruise-setup
 ```
 
-`/setup` audits the repo first, then applies the scaffold only when you approve it.
+`/cruise-setup` audits the repo first, then applies the scaffold only when you approve it.
 
 ## Skills
 
-- `setup` - install or audit Cruise in a repo
+- `cruise-setup` - install or audit Cruise in a repo
 - `handoff` - write durable continuation state
 - `grill` - stress-test a plan against docs and code
 - `zoom-out` - re-orient around surrounding architecture
@@ -32,7 +32,7 @@ Then, inside the repo where you want to use Cruise, ask your agent to run:
 
 Cruise publishes neutral installable skills under `skills/`.
 
-`setup` installs the repo-local protocol scaffold and root instruction fragments. It does not generate repo-local skill adapter copies.
+`cruise-setup` installs the repo-local protocol scaffold and root instruction fragments. It does not generate repo-local skill adapter copies.
 
 The canonical skill sources live under `skills/` and are installed with `npx skills`. If you want Claude Code, Codex, and OpenCode to all know the Cruise skills, install the skill package in each agent environment that needs it.
 

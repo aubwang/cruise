@@ -1,5 +1,5 @@
 ---
-name: setup
+name: cruise-setup
 description: Install or audit Cruise, then set up repo instructions so domain glossary and decision-state conventions are clear. Run before first use of `grill`, `diagnose`, `tdd`, `shape`, or `zoom-out`.
 disable-model-invocation: true
 ---
@@ -12,9 +12,9 @@ Bootstrap Cruise first, then configure the repo-specific documentation conventio
 
 Resolve this skill's bundled `scripts/cruise_session.py` relative to the skill directory. If `.cruise/scripts/cruise_session.py` is missing or stale, copy the bundled script there and make it executable.
 
-Run `python3 .cruise/scripts/cruise_session.py setup check` first and show the setup report.
+Run `python3 .cruise/scripts/cruise_session.py cruise-setup check` first and show the setup report.
 
-Run `python3 .cruise/scripts/cruise_session.py setup apply` only when the user explicitly approves applying setup changes. Preserve existing repo instructions, existing `CLAUDE.md -> AGENTS.md` symlinks, and existing ADR conventions.
+Run `python3 .cruise/scripts/cruise_session.py cruise-setup apply` only when the user explicitly approves applying setup changes. Preserve existing repo instructions, existing `CLAUDE.md -> AGENTS.md` symlinks, and existing ADR conventions.
 
 Setup does not generate repo-local skill adapter copies. The skills are installed through `npx skills`; setup only writes the neutral `.cruise/` protocol scaffold and root instruction fragments.
 
