@@ -4,15 +4,11 @@ A lightweight set of skills to seamlessly maintain context across AI agent sessi
 
 Make your vibe coding sessions durable with automated handoff protocols -- just type `continue` to pick up exactly where you left off, even in a fresh session.
 
----
-
 ## ❓ Why Cruise?
 
 When working on complex features or large projects, oftentimes you need to create fresh AI sessions to clear token bloat or refresh context. However, doing so usually means manually catching the agent up: restating goals, listing completed tasks, and redefining next steps.
 
 **Cruise** solves this by enabling your AI agent to automatically pre-seed its *own* future sessions with everything it needs to know. All you have to do is spin up a new session, type `go` or `continue`, or really anything that implies some sort of version of "keep going" and let the agent take the wheel.
-
----
 
 ## 🚀 Installation & Setup
 
