@@ -10,7 +10,7 @@ Make your vibe coding sessions durable with automated handoff protocols -- just 
 
 When working on complex features or large projects, oftentimes you need to create fresh AI sessions to clear token bloat or refresh context. However, doing so usually means manually catching the agent up: restating goals, listing completed tasks, and redefining next steps.
 
-**Cruise solves this by enabling your AI agent to automatically pre-seed its *own* future sessions with everything it needs to know. All you have to do is spin up a new session, type `go` or `continue`, or really anything that implies some sort of version of "keep going" and let the agent take the wheel.
+**Cruise** solves this by enabling your AI agent to automatically pre-seed its *own* future sessions with everything it needs to know. All you have to do is spin up a new session, type `go` or `continue`, or really anything that implies some sort of version of "keep going" and let the agent take the wheel.
 
 ---
 
@@ -84,7 +84,7 @@ python3 -m unittest tests/test_cruise_session.py
 ```
 
 ## 📝 Notes & Acknowledgments
-- Many of the foundational skills and scaffolding paradigms are borrowed from the excellent [mattpocock/skills](https://github.com/mattpocock/skills)
+- Many of the foundational skills and scaffolding paradigms are borrowed from the excellent [mattpocock/skills](https://github.com/mattpocock/skills).
 
 ## 📄 License
 [MIT](https://github.com/aubwang/cruise/blob/main/LICENSE)
