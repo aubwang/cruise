@@ -1,7 +1,12 @@
 # Code on Cruise Control
 
-A lightweight set of skills to help you refine and implement your ideas. Make your vibe coding sessions easier with predefined handoff protocols -- just type `continue` to keep going.
+A lightweight set of skills to help you refine and implement your ideas with Claude Code, Codex, and Opencode. Make your vibe coding sessions seamless with predefined handoff protocols -- just type `continue` to keep going.
 
+## Why?
+
+I made **Cruise** to solve a specific issue I was facing. When working on a large project or feature, creating new sessions to refresh context is necessary. However that meant that I had to restate to the agent what I was doing and what tasks to do, every single time.
+
+So I built **Cruise**, a skill that lets your AI Agent itself pre-seed your new session with what the AI Agent needs to know to continue your work. All you have to do is start a `/new` session, and then just type `go` or `continue`.
 
 ## Install
 
