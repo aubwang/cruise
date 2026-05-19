@@ -488,7 +488,7 @@ def planning_files_warning() -> str | None:
 
 
 def default_config() -> dict[str, object]:
-    config = dict(DEFAULT_CONFIG)
+    config: dict[str, object] = dict(DEFAULT_CONFIG)
     candidates = find_adr_candidates()
     if candidates:
         config["adr_dir"] = candidates[0]
@@ -901,20 +901,18 @@ def candidate_skills_roots(value: str | None = None) -> list[Path]:
     return [path.resolve() for path in candidates]
 
 
-def resolve_skills_root(value: str | None = None, required: bool = False) -> Path | None:
+def resolve_skills_root(value: str | None = None) -> Path:
     for path in candidate_skills_roots(value):
         if all((path / name / "SKILL.md").exists() for name in SKILL_NAMES):
             return path
-    if required:
-        raise SystemExit(
-            "Cannot find Cruise skill sources under `skills/`. "
-            "Set `CRUISE_SKILLS_ROOT` only when running package maintenance from a nonstandard location."
-        )
-    return None
+    raise SystemExit(
+        "Cannot find Cruise skill sources under `skills/`. "
+        "Set `CRUISE_SKILLS_ROOT` only when running package maintenance from a nonstandard location."
+    )
 
 
 def sync_package_skills() -> None:
-    skills_root = resolve_skills_root(str(ROOT / "skills"), required=True)
+    skills_root = resolve_skills_root(str(ROOT / "skills"))
     missing = [name for name in SKILL_NAMES if not (skills_root / name / "SKILL.md").exists()]
     if missing:
         raise SystemExit("Missing installable skill folders: " + ", ".join(missing))
