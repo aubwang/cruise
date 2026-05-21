@@ -1,98 +1,87 @@
-# Code on Cruise Control
+# 🚘 Code on Cruise Control
 
-A lightweight set of skills to help you refine and implement your ideas. Make your vibe coding sessions easier with predefined handoff protocols -- just type `continue` to keep going.
+A lightweight set of skills to seamlessly maintain context across AI agent sessions. Cruise helps you refine, implement, and hand off your ideas and works with **Claude Code**, **Codex**, **OpenCode** and more.
+
+Make your vibe coding sessions durable with automated handoff protocols -- just type `continue` to pick up exactly where you left off, even in a fresh session.
+
+## ❓ Why Cruise?
+
+When working on complex features or large projects, oftentimes you need to create fresh AI sessions to clear token bloat or refresh context. However, doing so usually means manually catching the agent up: restating goals, listing completed tasks, and redefining next steps.
+
+**Cruise** solves this by enabling your AI agent to automatically pre-seed its *own* future sessions with everything it needs to know. All you have to do is spin up a new session, type `go` or `continue`, or really anything that implies some sort of version of "keep going" and let the agent take the wheel.
+
+## 🚀 Installation & Setup
+
+1. Add the Cruise skills package to your agent ecosystem:
+   ```bash
+   npx skills add aubwang/cruise
+   ```
+2. Inside the repository where you want to use Cruise, ask your agent to run the configuration protocol:
+   ```bash
+   /cruise-setup
+   ```
+
+## 🛠️ Available Skills & Commands
+Once installed, Cruise equips your AI assistant with the following specialized workflows:
+- `/cruise-setup` – Install or audit Cruise configurations in a repository.
+- `/grill` - Stress-test and document ideas, implementation details, and architectural decisions for your project. I recommend that you run this right after `/cruise-setup` to nail down your design decisions before any vibing happens.
+- `/autostart` / `/autorun` / `/autostop` - (optional) Execute bounded, human-approved autonomous coding cycles. Typically you won't need to touch `/autorun` and `/autostop`, those skills are more for the agent but are available in case you need it.
+- `/handoff` - Compress the current conversation state and write a durable continuation checkpoint. In auto mode the agent should already do this without needing you to manually invoke it.
+- `/zoom-out` - Force the agent to take a step back and evaluate recent work from a bird's eye view. Helpful for preventing tunnel vision!
+- `/diagnose` - Debug complex errors using a reproduce -> hypothesize -> fix loop
+- `/tdd` - Enforce disciplined, test first development loops for precise feature implementation.
+- `/shape` - Discover and implement high-leverage archetectural and structural improvements in your code
 
 
-## Install
-
-```sh
-npx skills add aubwang/cruise
+## 🏗️ How It Works
+When initialized, Cruise generates a neutral, repository-local protocol layout to anchor your AI:
 ```
-
-Then, inside the repo where you want to use Cruise, ask your agent to run:
-
-```text
-/cruise-setup
-```
-
-`/cruise-setup` audits the repo first, then applies the scaffold only when you approve it.
-
-## Skills
-
-- `cruise-setup` - install or audit Cruise in a repo
-- `handoff` - write durable continuation state
-- `grill` - stress-test a plan against docs and code
-- `zoom-out` - re-orient around surrounding architecture
-- `diagnose` - debug with a reproduce/hypothesize/fix loop
-- `tdd` - use restrained test-first development when it helps
-- `shape` - find high-leverage architecture improvements
-- `autostart` / `autorun` / `autostop` - bounded human-approved autonomous coding
-
-## What It Does
-
-Cruise publishes neutral installable skills under `skills/`.
-
-`cruise-setup` installs the repo-local protocol scaffold and root instruction fragments. It does not generate repo-local skill adapter copies.
-
-The canonical skill sources live under `skills/` and are installed with `npx skills`. If you want Claude Code, Codex, and OpenCode to all know the Cruise skills, install the skill package in each agent environment that needs it.
-
-Cruise creates a neutral repo-local protocol root:
-
-```text
 .cruise/
-  protocol.md
-  config.json
-  templates/
-  scripts/cruise_session.py
+├── protocol.md          # Core agent behavioral guidelines
+├── config.json          # Workspace configuration parameters
+├── templates/           # Custom state, nudge, and plan templates
+└── scripts/
+    └── cruise_session.py # Zero-dependency session runner
 ```
 
-It can also generate live session files such as:
-
-```text
-.cruise/plan.md
-.cruise/spec.md
-.cruise/next.md
-.cruise/nudge.md
-.cruise/sessions/
-HANDOFF.md
+During live development, Cruise dynamically creates and updates the following active context assets:
+```
+├── .cruise/
+│   ├── plan.md          # Active execution roadmap
+│   ├── spec.md          # Architecture specs & provisional decisions
+│   ├── next.md          # Direct behavioral anchor for the next session
+│   ├── nudge.md         # Contextual prompt booster
+│   └── sessions/        # Historical context logs
+└── HANDOFF.md           # The global cross-session bridge file
 ```
 
-The CLI uses only the Python standard library. It does not require `uv`, npm, or a project environment.
+## 🏄 Dependencies
+Just have Python!
 
-This repo does not track local agent runtime/config directories such as `.claude/`, `.agents/`, `.codex/`, or `.opencode/`.
+## 💡 Core Protocols and Ideas
 
-## Handoff
+### 🤝 The Handoff Protocol
+Invoke `/handoff` whenever a code slice is complete, context windows are reaching capacity, or you want to step away and leave a crystal-clear continuation point.
 
-Use `handoff` when a slice is complete, context is getting low, or the agent should stop and leave a clean continuation point.
+### 🛡️ Bounded Autonomy
+Use `/autostart` and define your limits on how far you want your agent to go -- how long to work, how many commits to add, how many times to loop, where to stop, and more. Don't want to use the auto features? You don't have to -- everything else in Cruise still works.
 
-By default, handoff does not commit. Handoff commits happen only when explicitly requested.
+### 👨‍⚖️ Provisional Decisions & ADRs
+In this repo/skill, we define Architectural Decision Records (ADRs) as reserved exclusively for immutable, shipped choices carrying high reversal costs.
+- Ongoing design decisions made during planning or grilling live inside .cruise/spec.md under ## Provisional decisions.
+- A provisional decision is automatically promoted to an accepted ADR only when its corresponding implementation commit ships, or when changing it would require severe structural refactoring or user-facing alterations.
 
-## Autonomy
 
-Bounded autonomy is optional and off by default. Hard caps such as time, iteration, and commit budgets are enforceable; soft stops such as no progress, scope drift, approval boundaries, and acceptance criteria still depend on agent judgment and honest reporting.
+## 🧑‍💻 Development (working on this repo itself)
+Run the localized test suite using Python's native test runner:
 
-## Decisions
-
-ADRs are only for accepted shipped decisions with reversal cost.
-
-Important decisions made during planning or grilling live in:
-
-```md
-.cruise/spec.md
-## Provisional decisions
-```
-
-Promote a provisional decision to an accepted ADR when the first commit ships it and reversing it would require code changes, migration, user-visible behavior changes, or explanation to a future maintainer.
-
-## Development
-
-```sh
+```python
 python3 -m unittest tests/test_cruise_session.py
 ```
 
-## Notes
-Alot of the skills and scaffolding ideas are borrowed from [mattpocock/skills](https://github.com/mattpocock/skills)
+## 📝 Notes & Acknowledgments
+- Many of the foundational skills and scaffolding paradigms are borrowed from the excellent [mattpocock/skills](https://github.com/mattpocock/skills).
+- Verifed that Cruise works with Claude Code, OpenAI Codex, and OpenCode. Alternate coding harnesses should also work if they support the [Agent Skills](https://agentskills.io/) standard.
 
-## License
-
-MIT
+## 📄 License
+[MIT](https://github.com/aubwang/cruise/blob/main/LICENSE)
