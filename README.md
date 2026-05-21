@@ -72,7 +72,7 @@ In this repo/skill, we define Architectural Decision Records (ADRs) as reserved 
 - A provisional decision is automatically promoted to an accepted ADR only when its corresponding implementation commit ships, or when changing it would require severe structural refactoring or user-facing alterations.
 
 
-## 🧑‍💻 Development (working on ~this~ repo itself)
+## 🧑‍💻 Development (working on this repo itself)
 Run the localized test suite using Python's native test runner:
 
 ```python
