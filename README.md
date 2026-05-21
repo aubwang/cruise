@@ -1,8 +1,39 @@
 # 🚘 Code on Cruise Control
 
-A lightweight set of skills to seamlessly maintain context across AI agent sessions. Cruise helps you refine, implement, and hand off your ideas and works with **Claude Code**, **Codex**, **OpenCode** and more.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/aubwang/cruise/blob/main/LICENSE)
+[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
+[![CI](https://github.com/aubwang/cruise/actions/workflows/test.yml/badge.svg)](https://github.com/aubwang/cruise/actions/workflows/test.yml)
+[![Standard: Agent Skills](https://img.shields.io/badge/Standard-Agent%20Skills-green.svg)](https://agentskills.io)
+[![Tested On: Claude Code](https://img.shields.io/badge/Tested%20On-Claude%20Code-purple.svg)](https://github.com/anthropics/claude-code)
+
+The guardrails and memory layer for **vibe coding**. A lightweight set of skills to seamlessly maintain context across AI agent sessions. Cruise helps you refine, implement, and hand off your ideas, and works with **Claude Code**, **Codex**, **OpenCode** and more.
 
 Make your vibe coding sessions durable with automated handoff protocols -- just type `continue` to pick up exactly where you left off, even in a fresh session.
+
+## 🎬 In Action
+
+```text
+$ claude
+> implement the burst-window logic on the rate limiter
+... [agent reads spec.md, edits middleware, runs tests, commits] ...
+> /handoff
+✓ wrote .cruise/next.md      (current step, blockers, next test to write)
+✓ updated HANDOFF.md          (cross-session bridge)
+✓ logged .cruise/sessions/2026-05-21-rate-limiter.md
+[ctrl-d]
+
+# ─── fresh terminal, several hours later ─────────────────────────────
+$ claude
+> continue
+Reading .cruise/next.md and HANDOFF.md...
+
+Picking up the rate limiter. Burst-window test is still red — the
+token bucket isn't refilling on the edge of the window. Threading
+`burst_budget` through the middleware now, then re-running
+`pytest tests/rate_limit/` to confirm.
+```
+
+> Replace this block with an [asciinema](https://asciinema.org/) cast or [VHS](https://github.com/charmbracelet/vhs) gif when ready.
 
 ## ❓ Why Cruise?
 
@@ -30,7 +61,7 @@ Once installed, Cruise equips your AI assistant with the following specialized w
 - `/zoom-out` - Force the agent to take a step back and evaluate recent work from a bird's eye view. Helpful for preventing tunnel vision!
 - `/diagnose` - Debug complex errors using a reproduce -> hypothesize -> fix loop
 - `/tdd` - Enforce disciplined, test first development loops for precise feature implementation.
-- `/shape` - Discover and implement high-leverage archetectural and structural improvements in your code
+- `/shape` - Discover and implement high-leverage architectural and structural improvements in your code
 
 
 ## 🏗️ How It Works
@@ -81,7 +112,7 @@ python3 -m unittest tests/test_cruise_session.py
 
 ## 📝 Notes & Acknowledgments
 - Many of the foundational skills and scaffolding paradigms are borrowed from the excellent [mattpocock/skills](https://github.com/mattpocock/skills).
-- Verifed that Cruise works with Claude Code, OpenAI Codex, and OpenCode. Alternate coding harnesses should also work if they support the [Agent Skills](https://agentskills.io/) standard.
+- Verified that Cruise works with Claude Code, OpenAI Codex, and OpenCode. Alternate coding harnesses should also work if they support the [Agent Skills](https://agentskills.io/) standard.
 
 ## 📄 License
 [MIT](https://github.com/aubwang/cruise/blob/main/LICENSE)
