@@ -14,22 +14,27 @@ Make your vibe coding sessions durable with automated handoff protocols -- just 
 ```zsh
 $ claude
 > implement the burst-window logic on the rate limiter
-... [agent reads spec.md, edits middleware, runs tests, commits] ...
-> /handoff
-✓ wrote .cruise/next.md      (current step, blockers, next test to write)
-✓ updated HANDOFF.md          (cross-session bridge)
-✓ logged .cruise/sessions/2026-05-21-rate-limiter.md
-[ctrl-d]
 
-# ─── fresh terminal, several hours later ─────────────────────────────
+    reading .cruise/spec.md...
+    editing src/middleware/rate_limit.py...
+    running pytest tests/rate_limit/... ✓ 8 passed
+    committed "Add burst-window logic to rate limiter"
+
+> /handoff
+
+    ✓ wrote .cruise/next.md, HANDOFF.md, sessions/2026-05-21-rate-limiter.md
+
+# ─── you close the terminal, take a break ────────────────────────────
+# ─── fresh terminal, hours or days later ─────────────────────────────
+
 $ claude
 > continue
-Reading .cruise/next.md and HANDOFF.md...
 
-Picking up the rate limiter. Burst-window test is still red — the
-token bucket isn't refilling on the edge of the window. Threading
-`burst_budget` through the middleware now, then re-running
-`pytest tests/rate_limit/` to confirm.
+    reading .cruise/next.md + HANDOFF.md...
+    picking up the rate limiter. burst-window test is still red — token
+    bucket isn't refilling on the edge of the window. threading
+    `burst_budget` through the middleware now, then re-running
+    `pytest tests/rate_limit/` to confirm.
 ```
 
 ## ❓ Why Cruise?
