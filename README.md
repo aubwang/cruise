@@ -25,7 +25,7 @@ When working on complex features or large projects, oftentimes you need to creat
 Once installed, Cruise equips your AI assistant with the following specialized workflows:
 - `/cruise-setup` – Install or audit Cruise configurations in a repository.
 - `/grill` - Stress-test and document ideas, implementation details, and architectural decisions for your project. I recommend that you run this right after `/cruise-setup` to nail down your design decisions before the auto loop starts.
-- `/autostart` / `/autorun` / `/autostop` - Execute bounded, human-approved autonomous coding cycles. Typically you won't need to touch `/autorun` and `/autostop`, those skills are more for the agent but are available in case you need it.
+- `/autostart` / `/autorun` / `/autostop` - (optional) Execute bounded, human-approved autonomous coding cycles. Typically you won't need to touch `/autorun` and `/autostop`, those skills are more for the agent but are available in case you need it.
 - `/handoff` - Compress the current conversation state and write a durable continuation checkpoint. In auto mode the agent should already do this without needing you to manually invoke it.
 - `/zoom-out` - Force the agent to take a step back and evaluate recent work from a bird's eye view. Helpful for preventing tunnel vision!
 - `/diagnose` - Debug complex errors using a reproduce -> hypothesize -> fix loop
