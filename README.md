@@ -20,7 +20,8 @@ $ claude
     running pytest tests/rate_limit/... ✓ 8 passed
     committed "Add burst-window logic to rate limiter"
 
-    (auto) wrote .cruise/next.md, HANDOFF.md, sessions/2026-05-21-rate-limiter.md
+    invoking /handoff (slice complete)...
+    ✓ wrote .cruise/next.md, HANDOFF.md, sessions/2026-05-21-rate-limiter.md
 
 # ─── /new or a fresh terminal — same outcome ─────────────────────────
 
@@ -56,7 +57,7 @@ Once installed, Cruise equips your AI assistant with the following specialized w
 - `/cruise-setup` – Install or audit Cruise configurations in a repository.
 - `/grill` - Stress-test and document ideas, implementation details, and architectural decisions for your project. I recommend that you run this right after `/cruise-setup` to nail down your design decisions before any vibing happens.
 - `/autostart` / `/autorun` / `/autostop` - (optional) Execute bounded, human-approved autonomous coding cycles. Typically you won't need to touch `/autorun` and `/autostop`, those skills are more for the agent but are available in case you need it.
-- `/handoff` - Write a continuation checkpoint (`.cruise/next.md` + `HANDOFF.md`) so the next session resumes cleanly. Cruise triggers this automatically when context gets heavy, so you rarely need to invoke it by hand.
+- `/handoff` - Writes a continuation checkpoint (`.cruise/next.md` + `HANDOFF.md`) so the next session resumes cleanly. The agent invokes this on its own when a slice wraps or context gets heavy; you can also call it directly anytime you want to bookmark state.
 - `/zoom-out` - Force the agent to take a step back and evaluate recent work from a bird's eye view. Helpful for preventing tunnel vision!
 - `/diagnose` - Debug complex errors using a reproduce -> hypothesize -> fix loop
 - `/tdd` - Enforce disciplined, test first development loops for precise feature implementation.
