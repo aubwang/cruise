@@ -11,7 +11,7 @@ Make your vibe coding sessions durable with automated handoff protocols -- just 
 
 ## 🧑‍💻 In Action
 
-```zsh
+```console
 $ claude
 > implement the burst-window logic on the rate limiter
 
