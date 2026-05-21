@@ -1,6 +1,6 @@
 # 🚘 Code on Cruise Control
 
-A lightweight set of skills to seamlessly maintain context across AI agent sessions. Cruise helps you refine, implement, and hand off your ideas and works with **Claude Code**, **Codex**, and **OpenCode**.
+A lightweight set of skills to seamlessly maintain context across AI agent sessions. Cruise helps you refine, implement, and hand off your ideas and works with **Claude Code**, **Codex**, **OpenCode** and more.
 
 Make your vibe coding sessions durable with automated handoff protocols -- just type `continue` to pick up exactly where you left off, even in a fresh session.
 
@@ -81,6 +81,7 @@ python3 -m unittest tests/test_cruise_session.py
 
 ## 📝 Notes & Acknowledgments
 - Many of the foundational skills and scaffolding paradigms are borrowed from the excellent [mattpocock/skills](https://github.com/mattpocock/skills).
+- Verifed that Cruise works with Claude Code, OpenAI Codex, and OpenCode. Alternate coding harnesses should also work if they support the [Agent Skills](https://agentskills.io/) standard.
 
 ## 📄 License
 [MIT](https://github.com/aubwang/cruise/blob/main/LICENSE)
