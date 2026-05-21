@@ -64,7 +64,7 @@ Just have Python!
 Invoke `/handoff` whenever a code slice is complete, context windows are reaching capacity, or you want to step away and leave a crystal-clear continuation point.
 
 ### 🛡️ Bounded Autonomy
-Define your limits on how far you want your agent to go -- how long to work, how many commits to add, how many times to loop, where to stop, and more.
+Use `/autostart` and define your limits on how far you want your agent to go -- how long to work, how many commits to add, how many times to loop, where to stop, and more. Don't want to use the auto features? You don't have to -- everything else in Cruise still works.
 
 ### 👨‍⚖️ Provisional Decisions & ADRs
 In this repo/skill, we define Architectural Decision Records (ADRs) as reserved exclusively for immutable, shipped choices carrying high reversal costs.
