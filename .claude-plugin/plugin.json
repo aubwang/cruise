@@ -1,0 +1,12 @@
+{
+  "name": "cruise",
+  "skills": [
+    "./skills/cruise-setup",
+    "./skills/handoff",
+    "./skills/grill",
+    "./skills/zoom-out",
+    "./skills/diagnose",
+    "./skills/tdd",
+    "./skills/shape"
+  ]
+}
