@@ -12,6 +12,7 @@ __pycache__/
 .cruise/plan.md
 .cruise/spec.md
 .cruise/next.md
+.cruise/handoff-summary.md
 .cruise/nudge.md
 .cruise/nudges.log.md
 .cruise/autonomy.md

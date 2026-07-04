@@ -134,19 +134,141 @@ class CruiseSessionTest(unittest.TestCase):
         self.assertIn("Go up a layer of abstraction.", zoom_out_text)
         self.assertNotIn("allow_implicit_invocation", shape_text)
 
-    def test_nudge_and_handoff_no_commit(self) -> None:
+    def latest_session_path(self) -> Path:
+        latest = (self.root / ".cruise" / "sessions" / "latest.md").read_text(encoding="utf-8")
+        match = re.search(r"^path: (.+)$", latest, re.MULTILINE)
+        assert match is not None
+        return self.root / match.group(1).strip()
+
+    def test_nudge_and_handoff(self) -> None:
         self.run_cli("cruise-setup", "apply")
         self.run_cli("nudge", "set", "Move to seccomp after this slice")
         show = self.run_cli("nudge", "show")
         self.assertEqual(show.stdout.strip(), "Move to seccomp after this slice")
 
-        handoff = self.run_cli("handoff", "--no-commit")
-        self.assertIn("No commit requested.", handoff.stdout)
+        handoff = self.run_cli("handoff")
+        self.assertIn("note: no --summary-file provided", handoff.stdout)
         self.assertTrue((self.root / ".cruise" / "next.md").exists())
         self.assertTrue((self.root / ".cruise" / "sessions" / "latest.md").exists())
         next_text = (self.root / ".cruise" / "next.md").read_text(encoding="utf-8")
         self.assertIn("## Pending artifacts", next_text)
         self.assertIn("## Provisional decisions", next_text)
+
+    def test_handoff_no_commit_is_accepted_noop(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+
+        result = self.run_cli("handoff", "--no-commit")
+
+        self.assertIn("Wrote .cruise/next.md", result.stdout)
+        self.assertNotIn("No commit requested.", result.stdout)
+
+    def test_handoff_commit_flag_is_rejected(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        result = subprocess.run(
+            [sys.executable, str(self.script), "handoff", "--commit"],
+            cwd=self.root,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_handoff_summary_file_flows_into_next_and_session(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        plan = self.root / ".cruise" / "plan.md"
+        plan.write_text(
+            "# Cruise Plan\n\n## Current objective\n\nShip the seccomp sandbox.\n\n"
+            "## Current slice\n\n- Wire seccomp filter into the launcher.\n",
+            encoding="utf-8",
+        )
+        summary = self.root / "handoff-summary.md"
+        summary.write_text(
+            "## Summary\n\nWired the seccomp filter into the launcher and validated it.\n\n"
+            "## Pending artifacts\n\n- Branch `seccomp-wire` awaiting review.\n\n"
+            "## Next action\n\nRun the launcher integration tests under strace.\n",
+            encoding="utf-8",
+        )
+
+        result = self.run_cli("handoff", "--summary-file", str(summary))
+
+        self.assertNotIn("note: no --summary-file provided", result.stdout)
+        next_text = (self.root / ".cruise" / "next.md").read_text(encoding="utf-8")
+        session_text = self.latest_session_path().read_text(encoding="utf-8")
+        for text in [next_text, session_text]:
+            self.assertIn("Wired the seccomp filter into the launcher and validated it.", text)
+            self.assertIn("Branch `seccomp-wire` awaiting review.", text)
+            self.assertIn("Run the launcher integration tests under strace.", text)
+
+    def test_handoff_missing_summary_file_fails(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        result = subprocess.run(
+            [sys.executable, str(self.script), "handoff", "--summary-file", "does-not-exist.md"],
+            cwd=self.root,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("missing or empty", result.stderr)
+
+    def test_handoff_reads_plan_pending_artifacts(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        plan = self.root / ".cruise" / "plan.md"
+        plan.write_text(
+            "# Cruise Plan\n\n## Current objective\n\nShip the seccomp sandbox.\n\n"
+            "## Current slice\n\n- Wire seccomp filter into the launcher.\n\n"
+            "## Pending artifacts\n\n- Unmerged patch in `patches/seccomp.diff`.\n",
+            encoding="utf-8",
+        )
+
+        self.run_cli("handoff")
+
+        next_text = (self.root / ".cruise" / "next.md").read_text(encoding="utf-8")
+        session_text = self.latest_session_path().read_text(encoding="utf-8")
+        self.assertIn("Unmerged patch in `patches/seccomp.diff`.", next_text)
+        self.assertIn("Unmerged patch in `patches/seccomp.diff`.", session_text)
+
+    def test_handoff_lists_adrs_without_status_frontmatter(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        adr_dir = self.root / "docs" / "adr"
+        adr_dir.mkdir(parents=True)
+        (adr_dir / "0001-event-sourced-orders.md").write_text(
+            "# Event-sourced orders\n\nWe replay events instead of storing state.\n",
+            encoding="utf-8",
+        )
+        (adr_dir / "0002-old-choice.md").write_text(
+            "---\nstatus: superseded\n---\n\n# Old choice\n\nReplaced by 0001.\n",
+            encoding="utf-8",
+        )
+
+        self.run_cli("handoff")
+
+        next_text = (self.root / ".cruise" / "next.md").read_text(encoding="utf-8")
+        self.assertIn("Event-sourced orders", next_text)
+        self.assertNotIn("Old choice", next_text)
+
+    def test_handoff_slug_names_session_file(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+
+        self.run_cli("handoff", "--slug", "Seccomp Filter!")
+
+        session_path = self.latest_session_path()
+        self.assertTrue(session_path.name.endswith("-seccomp-filter.md"))
+        self.assertTrue(session_path.exists())
+
+    def test_dev_and_dist_scripts_are_byte_identical(self) -> None:
+        dev = (SOURCE_ROOT / ".cruise" / "scripts" / "cruise_session.py").read_bytes()
+        dist = (SOURCE_ROOT / "skills" / "cruise-setup" / "scripts" / "cruise_session.py").read_bytes()
+        self.assertEqual(dev, dist)
+
+    def test_apply_protocol_matches_tracked_protocol(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+
+        generated = (self.root / ".cruise" / "protocol.md").read_text(encoding="utf-8")
+        tracked = (SOURCE_ROOT / ".cruise" / "protocol.md").read_text(encoding="utf-8")
+        self.assertEqual(generated, tracked)
 
     def test_planning_warning_when_context_map_missing(self) -> None:
         (self.root / "ROADMAP.md").write_text("# Product Roadmap\n", encoding="utf-8")
@@ -221,7 +343,7 @@ class CruiseSessionTest(unittest.TestCase):
     def test_handoff_warns_on_placeholder_plan(self) -> None:
         self.run_cli("cruise-setup", "apply")
 
-        result = self.run_cli("handoff", "--no-commit")
+        result = self.run_cli("handoff")
 
         self.assertIn("warning:", result.stdout)
         self.assertIn(".cruise/plan.md", result.stdout)
@@ -238,7 +360,7 @@ class CruiseSessionTest(unittest.TestCase):
             encoding="utf-8",
         )
 
-        result = self.run_cli("handoff", "--no-commit")
+        result = self.run_cli("handoff")
 
         self.assertNotIn("warning:", result.stdout)
 
@@ -251,7 +373,7 @@ class CruiseSessionTest(unittest.TestCase):
             encoding="utf-8",
         )
 
-        result = self.run_cli("handoff", "--no-commit")
+        result = self.run_cli("handoff")
 
         self.assertIn("warning:", result.stdout)
         self.assertIn("Current objective", result.stdout)
