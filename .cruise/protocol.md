@@ -6,7 +6,7 @@ Critical-path state must never live only in chat context.
 
 ## Standing contract
 
-1. At the start of each user turn, read `.cruise/nudge.md` if it exists and is non-empty.
+1. When resuming a session and before starting each new slice, read `.cruise/nudge.md` if it exists and is non-empty.
 2. Before starting a meaningful slice, update `.cruise/plan.md`.
 3. The parent agent owns sequencing, conflict resolution, integration, and discarding candidate output.
 4. Plans and roadmap items are mutable intent.
