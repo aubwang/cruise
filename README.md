@@ -19,7 +19,7 @@ $ claude
     committed "Add burst-window logic to rate limiter"
 
     invoking /handoff (slice complete)...
-    wrote .cruise/next.md, sessions/2026-05-21-rate-limiter.md
+    wrote .cruise/next.md, sessions/2026-05-21T14-02-11-9f3ab2c1-rate-limiter.md
 
 # --- new terminal, fresh session ---
 
@@ -74,10 +74,7 @@ Cruise creates a `.cruise/` directory in your repo with session state and protoc
 ├── spec.md           # Provisional decisions
 ├── next.md           # Cross-session handoff and next-session anchor
 ├── nudge.md          # Human-to-agent nudge channel
-├── sessions/         # Session history
-├── templates/        # Document templates
-└── scripts/
-    └── cruise_session.py
+└── sessions/         # Session history
 ```
 
 The only repo-visible changes cruise makes are two marker-delimited upserts:
@@ -87,7 +84,7 @@ The only repo-visible changes cruise makes are two marker-delimited upserts:
 ## Core Concepts
 
 ### Handoff Protocol
-Invoke `/handoff` when a slice is complete, context is getting heavy, or you want to step away. The agent writes `.cruise/next.md` and a session snapshot so the next session can resume cleanly.
+Invoke `/handoff` when a slice is complete, context is getting heavy, or you want to step away. The agent writes `.cruise/next.md` and a session snapshot so the next session can resume cleanly, with a summary the agent authors itself -- what was decided, open threads, next action -- rather than generated boilerplate.
 
 ### Provisional Decisions and ADRs
 Design decisions made during planning live in `.cruise/spec.md` as provisional decisions. A provisional decision is promoted to an accepted ADR in `docs/adr/` only when the implementation ships and reversing it would be costly.

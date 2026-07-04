@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Refresh durable Cruise session state; only commit when the user explicitly requests it.
+description: Write a cross-session handoff — refresh `.cruise/next.md` and a session snapshot so the next session resumes cleanly.
 disable-model-invocation: true
 argument-hint: What should the next session focus on?
 ---
@@ -30,10 +30,15 @@ Before running the command, open `.cruise/plan.md` and verify it reflects what j
 
 Only run the handoff command after plan.md is current. The script will also print a `warning:` line if it detects placeholder content; if you see one, fix plan.md and rerun handoff.
 
-## Run the command
+## Write the summary, then run the command
 
-Run `python3 .agents/skills/cruise-setup/scripts/cruise_session.py handoff --no-commit` unless the user explicitly requested a commit.
+The handoff command is the `cruise_session.py` script in the sibling `cruise-setup` skill's `scripts/` directory. Resolve it relative to where these skill files are installed: for `npx skills` installs that is `.agents/skills/cruise-setup/scripts/cruise_session.py`; for Claude Code plugin installs it is under the plugin root. `<script>` below means that path.
 
-If the user explicitly requested a handoff commit, run `python3 .agents/skills/cruise-setup/scripts/cruise_session.py handoff --commit`.
+1. Write the handoff summary to `.cruise/handoff-summary.md` with these sections:
+   - `## Summary` — what was decided, open threads, which files/PRs/ADRs/commits matter, which skills the next session should use.
+   - `## Pending artifacts` — work products still in flight (unmerged PRs, changes not yet landed, docs still to write).
+   - `## Next action` — what the next session should do first.
 
-After the command runs, report the paths for `.cruise/next.md` and `.cruise/sessions/latest.md`. If the command printed a `warning:` line, surface it to the user and refresh plan.md before declaring the handoff done.
+   If the user passed arguments (next-session focus), weave that focus into `## Summary` and `## Next action`.
+2. Run `python3 <script> handoff --summary-file .cruise/handoff-summary.md --slug <short-topic-slug>` with a short kebab-case slug for the session topic. The command bakes the summary into `.cruise/next.md` and the session snapshot. It writes only gitignored `.cruise/` files.
+3. Report the paths for `.cruise/next.md` and `.cruise/sessions/latest.md`. If the command printed a `warning:` line, surface it to the user and refresh plan.md before declaring the handoff done.
