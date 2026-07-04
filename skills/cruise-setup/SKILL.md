@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Cruise setup **wires the scaffold**. It does not own product planning files and it does not migrate existing docs. After the scaffold is in place this skill walks the user through choosing the right root instruction file, writing the protocol fragment, recording the domain glossary and decision-state conventions, then reconciling any detected planning files (`ROADMAP.md`, `docs/PLAN.md`, etc.) before declaring setup done.
 
-This is a prompt-driven skill that delegates atomic work to `cruise_session.py`. Confirm with the user before each step. Do not skip the reconciliation step — a stale `.cruise/plan.md` will mislead future agents.
+This is a prompt-driven skill that delegates atomic work to this skill's `scripts/cruise_session.py` — resolve the script relative to this skill's own directory (for `npx skills` installs that's `.agents/skills/cruise-setup/scripts/cruise_session.py`; for Claude Code plugin installs it's under the plugin root). `<script>` below means that path. Confirm with the user before each step. Do not skip the reconciliation step — a stale `.cruise/plan.md` will mislead future agents.
 
 ## What Cruise owns vs. doesn't own
 
@@ -32,11 +32,11 @@ If any repo-owned file is missing, leave it missing. Do not create it from a tem
 
 ## 0. Run the setup report
 
-Run `python3 .agents/skills/cruise-setup/scripts/cruise_session.py cruise-setup check` first and show the setup report. The report distinguishes "protocol fragment present" (the Cruise marker block) from "agent context map present" (the `## Agent Context Map` block this skill writes), and surfaces any detected planning files under `## Planning files`.
+Run `python3 <script> cruise-setup check` first and show the setup report. The report distinguishes "protocol fragment present" (the Cruise marker block) from "agent context map present" (the `## Agent Context Map` block this skill writes), and surfaces any detected planning files under `## Planning files`.
 
 ## 1. Apply the scaffold
 
-Run `python3 .agents/skills/cruise-setup/scripts/cruise_session.py cruise-setup apply` only when the user explicitly approves applying setup changes.
+Run `python3 <script> cruise-setup apply` only when the user explicitly approves applying setup changes.
 
 `apply` writes only the Cruise-owned files listed above (under `.cruise/` plus `.cruise/config.json`) and upserts a managed block in `.gitignore` (between `# cruise-gitignore:start` and `# cruise-gitignore:end`) that ignores the entire `.cruise/` directory. No cruise files appear in the repo's git history — the scaffold is local agent workspace state, regenerated on each setup run. Existing `.gitignore` lines outside the markers are preserved.
 
@@ -57,7 +57,7 @@ Never create `AGENTS.md` when `CLAUDE.md` already exists (or vice versa). Existi
 
 ## 3. Write the protocol fragment
 
-Run `python3 .agents/skills/cruise-setup/scripts/cruise_session.py cruise-setup instructions <FILE>` with the chosen file (`AGENTS.md` or `CLAUDE.md`). This upserts the Cruise protocol marker block into that file. It does not touch the rest of the file.
+Run `python3 <script> cruise-setup instructions <FILE>` with the chosen file (`AGENTS.md` or `CLAUDE.md`). This upserts the Cruise protocol marker block into that file. It does not touch the rest of the file.
 
 The managed `<!-- cruise-session-protocol:start/end -->` block is the single source of truth for Cruise operational mechanics (reading protocol files, checking nudges, using plan/next/sessions, handoff behavior). Do not duplicate these instructions elsewhere in the file or in the context map.
 

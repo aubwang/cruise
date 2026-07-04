@@ -41,7 +41,7 @@ Decision-state rule:
 - A candidate that contradicts an accepted ADR needs an explicit ADR-revisit rationale.
 - A candidate that contradicts a provisional decision can simply propose changing the plan.
 
-Then use the Agent tool with `subagent_type=Explore` to walk the codebase. Don't follow rigid heuristics — explore organically and note where you experience friction:
+Then walk the codebase. Prefer native host subagent spawning when available (e.g. Claude Code's Agent tool with `subagent_type=Explore`); otherwise explore directly. Don't follow rigid heuristics — explore organically and note where you experience friction:
 
 - Where does understanding one concept require bouncing between many small modules?
 - Where are modules **shallow** — interface nearly as complex as the implementation?
