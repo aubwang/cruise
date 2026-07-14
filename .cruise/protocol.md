@@ -6,8 +6,8 @@ Critical-path state must never live only in chat context.
 
 ## Standing contract
 
-1. When resuming a session and before starting each new slice, read `.cruise/nudge.md` if it exists and is non-empty.
-2. Before starting a meaningful slice, update `.cruise/plan.md`.
+1. Before beginning a meaningful repository work slice, read `.cruise/nudge.md` if it exists and is non-empty. Conversational or explanation-only turns that require no repository inspection or mutation do not require a check. Recheck after compaction or handoff, when resuming paused work, or when starting a new implementation or diagnosis slice.
+2. Before starting a meaningful repository work slice, update `.cruise/plan.md`.
 3. The parent agent owns sequencing, conflict resolution, integration, and discarding candidate output.
 4. Plans and roadmap items are mutable intent.
 5. ADRs only record accepted shipped decisions with reversal cost.

@@ -263,6 +263,30 @@ class CruiseSessionTest(unittest.TestCase):
         dist = (SOURCE_ROOT / "skills" / "cruise-setup" / "scripts" / "cruise_session.py").read_bytes()
         self.assertEqual(dev, dist)
 
+    def test_nudge_contract_is_slice_based_and_consistent(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        self.run_cli("cruise-setup", "instructions", "AGENTS.md")
+        agents = (self.root / "AGENTS.md").read_text(encoding="utf-8")
+        (self.root / "AGENTS.md").unlink()
+        self.run_cli("cruise-setup", "instructions", "CLAUDE.md")
+        claude = (self.root / "CLAUDE.md").read_text(encoding="utf-8")
+        protocol = (self.root / ".cruise" / "protocol.md").read_text(encoding="utf-8")
+
+        for text in [agents, claude, protocol]:
+            self.assertIn("meaningful repository work slice", text)
+            self.assertIn("if it exists and is non-empty", text)
+            self.assertIn("Conversational or explanation-only turns", text)
+            self.assertIn(
+                "recheck after compaction or handoff, when resuming paused work, "
+                "or when starting a new implementation or diagnosis slice",
+                text.lower(),
+            )
+            # No per-turn polling ritual: an empty nudge must not cost a
+            # filesystem check on conversational turns.
+            self.assertNotIn("user turn", text.lower())
+            self.assertNotIn("each new slice", text)
+            self.assertNotIn("every turn", text.lower())
+
     def test_apply_protocol_matches_tracked_protocol(self) -> None:
         self.run_cli("cruise-setup", "apply")
 
