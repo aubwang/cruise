@@ -294,6 +294,33 @@ class CruiseSessionTest(unittest.TestCase):
         tracked = (SOURCE_ROOT / ".cruise" / "protocol.md").read_text(encoding="utf-8")
         self.assertEqual(generated, tracked)
 
+    def test_apply_refreshes_stale_protocol(self) -> None:
+        protocol = self.root / ".cruise" / "protocol.md"
+        protocol.parent.mkdir(parents=True, exist_ok=True)
+        protocol.write_text(
+            "# Cruise Session Protocol\n\n"
+            "1. At the start of each user turn, check `.cruise/nudge.md`.\n",
+            encoding="utf-8",
+        )
+
+        self.run_cli("cruise-setup", "apply")
+
+        text = protocol.read_text(encoding="utf-8")
+        self.assertNotIn("each user turn", text)
+        self.assertIn("meaningful repository work slice", text)
+
+    def test_apply_does_not_overwrite_user_state_files(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        plan = self.root / ".cruise" / "plan.md"
+        nudge = self.root / ".cruise" / "nudge.md"
+        plan.write_text("# Cruise Plan\n\n## Current objective\n\nShip it.\n", encoding="utf-8")
+        nudge.write_text("Focus on the seccomp filter.\n", encoding="utf-8")
+
+        self.run_cli("cruise-setup", "apply")
+
+        self.assertIn("Ship it.", plan.read_text(encoding="utf-8"))
+        self.assertIn("Focus on the seccomp filter.", nudge.read_text(encoding="utf-8"))
+
     def test_planning_warning_when_context_map_missing(self) -> None:
         (self.root / "ROADMAP.md").write_text("# Product Roadmap\n", encoding="utf-8")
         self.run_cli("cruise-setup", "apply")
