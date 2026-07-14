@@ -644,7 +644,9 @@ def init_common_files() -> None:
         path.mkdir(parents=True, exist_ok=True)
     ensure_file(CONFIG_PATH, json_text(default_config()))
     migrate_config()
-    ensure_file(CRUISE / "protocol.md", PROTOCOL_MD)
+    # protocol.md is a Cruise-owned contract with no user state; rewrite it on
+    # every apply so contract updates reach existing installs.
+    atomic_write(CRUISE / "protocol.md", PROTOCOL_MD)
     ensure_file(CRUISE / "plan.md", PLAN_MD)
     ensure_file(CRUISE / "spec.md", SPEC_MD)
     ensure_file(CRUISE / "nudge.md", "")
