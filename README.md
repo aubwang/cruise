@@ -86,6 +86,9 @@ The only repo-visible changes cruise makes are two marker-delimited upserts:
 ### Handoff Protocol
 Invoke `/handoff` when a slice is complete, context is getting heavy, or you want to step away. The agent writes `.cruise/next.md` and a session snapshot so the next session can resume cleanly, with a summary the agent authors itself -- what was decided, open threads, next action -- rather than generated boilerplate.
 
+### Nudges
+`.cruise/nudge.md` is an asynchronous human-to-agent channel for steering upcoming work. Agents read it before beginning a meaningful repository work slice (if it exists and is non-empty), and recheck it after compaction or handoff, when resuming paused work, or when starting a new implementation or diagnosis slice. Conversational or explanation-only turns don't trigger a check -- to steer the agent mid-conversation, just say it in chat.
+
 ### Provisional Decisions and ADRs
 Design decisions made during planning live in `.cruise/spec.md` as provisional decisions. A provisional decision is promoted to an accepted ADR in `docs/adr/` only when the implementation ships and reversing it would be costly.
 
