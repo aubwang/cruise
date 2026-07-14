@@ -263,12 +263,63 @@ class CruiseSessionTest(unittest.TestCase):
         dist = (SOURCE_ROOT / "skills" / "cruise-setup" / "scripts" / "cruise_session.py").read_bytes()
         self.assertEqual(dev, dist)
 
+    def test_nudge_contract_is_slice_based_and_consistent(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        self.run_cli("cruise-setup", "instructions", "AGENTS.md")
+        agents = (self.root / "AGENTS.md").read_text(encoding="utf-8")
+        (self.root / "AGENTS.md").unlink()
+        self.run_cli("cruise-setup", "instructions", "CLAUDE.md")
+        claude = (self.root / "CLAUDE.md").read_text(encoding="utf-8")
+        protocol = (self.root / ".cruise" / "protocol.md").read_text(encoding="utf-8")
+
+        for text in [agents, claude, protocol]:
+            self.assertIn("meaningful repository work slice", text)
+            self.assertIn("if it exists and is non-empty", text)
+            self.assertIn("Conversational or explanation-only turns", text)
+            self.assertIn(
+                "recheck after compaction or handoff, when resuming paused work, "
+                "or when starting a new implementation or diagnosis slice",
+                text.lower(),
+            )
+            # No per-turn polling ritual: an empty nudge must not cost a
+            # filesystem check on conversational turns.
+            self.assertNotIn("user turn", text.lower())
+            self.assertNotIn("each new slice", text)
+            self.assertNotIn("every turn", text.lower())
+
     def test_apply_protocol_matches_tracked_protocol(self) -> None:
         self.run_cli("cruise-setup", "apply")
 
         generated = (self.root / ".cruise" / "protocol.md").read_text(encoding="utf-8")
         tracked = (SOURCE_ROOT / ".cruise" / "protocol.md").read_text(encoding="utf-8")
         self.assertEqual(generated, tracked)
+
+    def test_apply_refreshes_stale_protocol(self) -> None:
+        protocol = self.root / ".cruise" / "protocol.md"
+        protocol.parent.mkdir(parents=True, exist_ok=True)
+        protocol.write_text(
+            "# Cruise Session Protocol\n\n"
+            "1. At the start of each user turn, check `.cruise/nudge.md`.\n",
+            encoding="utf-8",
+        )
+
+        self.run_cli("cruise-setup", "apply")
+
+        text = protocol.read_text(encoding="utf-8")
+        self.assertNotIn("each user turn", text)
+        self.assertIn("meaningful repository work slice", text)
+
+    def test_apply_does_not_overwrite_user_state_files(self) -> None:
+        self.run_cli("cruise-setup", "apply")
+        plan = self.root / ".cruise" / "plan.md"
+        nudge = self.root / ".cruise" / "nudge.md"
+        plan.write_text("# Cruise Plan\n\n## Current objective\n\nShip it.\n", encoding="utf-8")
+        nudge.write_text("Focus on the seccomp filter.\n", encoding="utf-8")
+
+        self.run_cli("cruise-setup", "apply")
+
+        self.assertIn("Ship it.", plan.read_text(encoding="utf-8"))
+        self.assertIn("Focus on the seccomp filter.", nudge.read_text(encoding="utf-8"))
 
     def test_planning_warning_when_context_map_missing(self) -> None:
         (self.root / "ROADMAP.md").write_text("# Product Roadmap\n", encoding="utf-8")
