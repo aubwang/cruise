@@ -41,11 +41,11 @@ Cruise solves this by enabling your AI agent to pre-seed its own future sessions
 
 ## Installation
 
-1. Add the Cruise skills to your agent:
+1. Move to your project repository, and add the Cruise skills to your agent:
    ```bash
    npx skills add aubwang/cruise
    ```
-2. Run setup inside your repository:
+2. Inside of your agent session, invoke the `cruise-setup` skill:
    ```
    /cruise-setup
    ```
