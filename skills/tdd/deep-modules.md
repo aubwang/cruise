@@ -2,21 +2,19 @@
 
 From "A Philosophy of Software Design":
 
-**Deep module** = small interface + lots of implementation
+**Deep module** = small interface + substantial useful complexity hidden behind it.
 
 ```
 ┌─────────────────────┐
 │   Small Interface   │  ← Few methods, simple params
 ├─────────────────────┤
 │                     │
-│                     │
 │  Deep Implementation│  ← Complex logic hidden
-│                     │
 │                     │
 └─────────────────────┘
 ```
 
-**Shallow module** = large interface + little implementation (avoid)
+**Shallow module** = large interface + little implementation (avoid).
 
 ```
 ┌─────────────────────────────────┐
@@ -26,8 +24,28 @@ From "A Philosophy of Software Design":
 └─────────────────────────────────┘
 ```
 
-When designing interfaces, ask:
+A deep module must still represent **one coherent concept**. A one-method module that secretly performs many unrelated business operations is not good merely because its interface is small.
 
-- Can I reduce the number of methods?
-- Can I simplify the parameters?
-- Can I hide more complexity inside?
+Depth means:
+
+- High capability relative to interface complexity
+- Strong information hiding
+- Stable concepts
+- Safe, useful defaults
+- Complexity absorbed behind the boundary
+
+Depth does **not** mean:
+
+- Hidden global state
+- Surprising side effects
+- A god object
+- One generic method that accepts a huge configuration object
+- Unrelated responsibilities combined merely to reduce method count
+
+When designing an interface, ask:
+
+- Does it expose a coherent domain concept?
+- Does the module hide complexity callers shouldn't need to understand?
+- Are the defaults safe and unsurprising?
+- Would splitting it reveal genuinely independent responsibilities?
+- Is the interface small because the abstraction is good, or because complexity was hidden in an unstructured options object?
